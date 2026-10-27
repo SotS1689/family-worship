@@ -32,7 +32,9 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 - `src/views/` holds one file per screen.
 - `src/catalog.js` lists the plans, catechisms and hymn sources the app offers.
 - `src/content.js` turns each source into its list of **units**: a chapter, a day's
-  readings, a catechism question, or a hymn.
+  readings, a catechism question, or a hymn. A hymn plan goes through only the hymns
+  the family picks (`track.hymns`), in Let's Sing's numbering. They can add or remove
+  hymns later, and the plan keeps its place.
 - `src/schedule.js` decides what's due each day and moves plans forward on a check-in.
   Each plan has a pace in units per worship day. Each check-in earns that much credit,
   and the whole units are the day's new readings. With a pace under one a day (say

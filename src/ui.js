@@ -23,15 +23,24 @@ export function setTitle(title) {
     document.title = title === "Family Worship" ? title : `${title} · Family Worship`;
 }
 
-// Units of a track's source, worked out once per source
+// Every unit of a source, worked out once per source
 const units = new Map();
-export function unitsOf(track) {
-    const key = `${track.kind}/${track.source}`;
-    if (!units.has(key)) units.set(key, loadUnits(track.kind, track.source).catch((e) => {
+export function sourceUnits(kind, source) {
+    const key = `${kind}/${source}`;
+    if (!units.has(key)) units.set(key, loadUnits(kind, source).catch((e) => {
         units.delete(key);
         throw e;
     }));
     return units.get(key);
+}
+
+// A track's units: its whole source, or for hymns only the ones the family chose
+// (track.hymns, a list of hymn ids), kept in Let's Sing's order
+export async function unitsOf(track) {
+    const all = await sourceUnits(track.kind, track.source);
+    if (track.kind !== "hymns" || !track.hymns) return all;
+    const chosen = new Set(track.hymns);
+    return all.filter((u) => chosen.has(u.id));
 }
 
 export async function totalsFor(tracks) {

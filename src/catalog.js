@@ -49,7 +49,7 @@ export const SOURCES = {
     hymns: {
         "lets-sing": {
             name: "Let's Sing hymns & psalms",
-            about: "Hymns and psalms from Let's Sing, in Let's Sing's numbering. Each opens in Let's Sing to sing along in four parts.",
+            about: "Choose hymns and psalms from Let's Sing; they come up in Let's Sing's numbering. Each opens in Let's Sing to sing along in four parts.",
             unit: "hymn",
         },
     },

@@ -3,7 +3,7 @@ import { state, save, newTrack } from "../store.js";
 import { today, formatDay } from "../dates.js";
 import { unitsPerDay, projectedFinish } from "../schedule.js";
 import { KINDS, SOURCES, GOALS } from "../catalog.js";
-import { app, $, esc, setTitle, unitsOf, totalsFor, trackName, kindIcon, paceText, rateText, sourceOf, nextRender, isCurrent } from "../ui.js";
+import { app, $, esc, setTitle, unitsOf, sourceUnits, totalsFor, trackName, kindIcon, paceText, rateText, sourceOf, nextRender, isCurrent, toast } from "../ui.js";
 
 export async function renderPlans() {
     const ticket = nextRender();
@@ -33,6 +33,14 @@ export async function renderPlans() {
         <a class="btn primary wide" href="#/plans/new">＋ Add a plan</a>`;
 }
 
+// Where the form starts for each kind: a year through the Bible; a catechism question
+// and two hymns a week (a goal makes little sense for a short list of chosen hymns)
+const DEFAULT_PACE = {
+    bible: { mode: "goal", days: 365 },
+    catechism: { mode: "rate", count: 1, per: "week" },
+    hymns: { mode: "rate", count: 2, per: "week" },
+};
+
 // New (trackId undefined) or edit
 export async function renderPlanForm(trackId) {
     const ticket = nextRender();
@@ -41,7 +49,7 @@ export async function renderPlanForm(trackId) {
     setTitle(editing ? "Edit plan" : "Add a plan");
 
     const draft = editing ? structuredClone(editing) : {
-        kind: "bible", source: "straight", pace: { mode: "goal", days: 365 }, position: 0, start: today(),
+        kind: "bible", source: "straight", pace: DEFAULT_PACE.bible, position: 0, start: today(),
     };
     const firstAvailable = (kind) => Object.keys(SOURCES[kind]).find((k) => !SOURCES[kind][k].unavailable);
 
@@ -54,6 +62,19 @@ export async function renderPlanForm(trackId) {
                 </div>
                 <select id="source" aria-label="Which"></select>
                 <p class="muted small" id="about"></p>
+            </fieldset>
+            <fieldset id="hymn-pick" hidden>
+                <legend>Which hymns</legend>
+                <input type="search" id="hymn-search" placeholder="Search title, tune or number" aria-label="Search hymns">
+                <div class="pick-bar">
+                    <span id="hymn-count"></span>
+                    <label class="small"><input type="checkbox" id="chosen-only"> Show chosen only</label>
+                </div>
+                <div class="pick-bar">
+                    <button type="button" class="btn small" id="choose-shown">Choose all shown</button>
+                    <button type="button" class="btn small" id="clear-shown">Clear all shown</button>
+                </div>
+                <ul class="pick-list" id="hymn-list"></ul>
             </fieldset>
             <fieldset>
                 <legend>How fast</legend>
@@ -94,11 +115,73 @@ export async function renderPlanForm(trackId) {
         const src = SOURCES[draft.kind][draft.source];
         $("#about").textContent = src.about ?? "";
         $("#unit-word").textContent = `${src.unit}(s)`;
+        $("#hymn-pick").hidden = draft.kind !== "hymns";
+        if (draft.kind === "hymns") {
+            allHymns = await sourceUnits("hymns", draft.source);
+            if (!isCurrent(ticket)) return;
+            // A new plan starts with none chosen; one saved before choosing existed had them all
+            draft.hymns ??= editing ? allHymns.map((h) => h.id) : [];
+            refreshHymnList();
+        }
+        await refreshUnits();
+    }
+
+    async function refreshUnits() {
         units = await unitsOf(draft);
         if (!isCurrent(ticket)) return;
         $("#position").innerHTML = units.map((u, i) => `<option value="${i}" ${i === draft.position ? "selected" : ""}>${esc(u.q ? `${u.label} ${u.q}` : u.label)}</option>`).join("");
+        $("#position").disabled = !units.length;
         refreshPace();
     }
+
+    // ---- Hymn picker ----
+    let allHymns = [];
+    const shownHymns = () => {
+        const words = $("#hymn-search").value.toLowerCase().split(/\s+/).filter(Boolean);
+        const chosen = new Set(draft.hymns);
+        return allHymns.filter((h) => (!$("#chosen-only").checked || chosen.has(h.id))
+            && words.every((w) => `${h.id} ${h.title} ${h.tune} ${h.composer}`.toLowerCase().includes(w)));
+    };
+    function refreshHymnList() {
+        const chosen = new Set(draft.hymns);
+        $("#hymn-list").innerHTML = shownHymns().map((h) => `
+            <li><label><input type="checkbox" value="${esc(h.id)}" ${chosen.has(h.id) ? "checked" : ""}>
+                <span>${esc(h.label)}${h.tune ? ` <span class="muted small">${esc(h.tune)}</span>` : ""}</span></label></li>`).join("")
+            || `<li class="muted small">No hymns match.</li>`;
+        refreshHymnCount();
+    }
+    const refreshHymnCount = () => ($("#hymn-count").textContent = `${draft.hymns.length} of ${allHymns.length} chosen`);
+
+    // Changing the choice keeps the plan's place: the next hymn due stays next (or the
+    // first chosen hymn after it, if it was taken out), and hymns already sung stay sung
+    function setChosen(ids) {
+        const order = new Map(allHymns.map((h, i) => [h.id, i]));
+        const nextId = units[draft.position]?.id;
+        const nextAt = nextId != null ? order.get(nextId)
+            : units.length ? order.get(units.at(-1).id) + 0.5 // finished: only hymns added after the last one are due
+            : 0;
+        draft.hymns = [...new Set(ids)].sort((a, b) => order.get(a) - order.get(b));
+        const at = draft.hymns.findIndex((id) => order.get(id) >= nextAt);
+        draft.position = at === -1 ? draft.hymns.length : at;
+        refreshHymnCount();
+        refreshUnits();
+    }
+    $("#hymn-list").addEventListener("change", (e) => {
+        const id = e.target.value;
+        setChosen(e.target.checked ? [...draft.hymns, id] : draft.hymns.filter((x) => x !== id));
+        if ($("#chosen-only").checked && !e.target.checked) refreshHymnList();
+    });
+    $("#hymn-search").addEventListener("input", refreshHymnList);
+    $("#chosen-only").addEventListener("change", refreshHymnList);
+    $("#choose-shown").addEventListener("click", () => {
+        setChosen([...draft.hymns, ...shownHymns().map((h) => h.id)]);
+        refreshHymnList();
+    });
+    $("#clear-shown").addEventListener("click", () => {
+        const shown = new Set(shownHymns().map((h) => h.id));
+        setChosen(draft.hymns.filter((id) => !shown.has(id)));
+        refreshHymnList();
+    });
 
     function refreshPace() {
         form.mode.value = draft.pace.mode;
@@ -107,7 +190,10 @@ export async function renderPlanForm(trackId) {
             $("#count").value = draft.pace.count;
             $("#per").value = draft.pace.per;
         }
-        if (!units.length) return;
+        if (!units.length) {
+            $("#preview").textContent = draft.kind === "hymns" ? "Choose at least one hymn." : "";
+            return;
+        }
         const day = today();
         // As it will be once saved: a changed goal counts from today
         const t = { ...draft, credit: draft.credit ?? 0, start: editing && JSON.stringify(draft.pace) === JSON.stringify(editing.pace) ? draft.start : day };
@@ -124,6 +210,7 @@ export async function renderPlanForm(trackId) {
             draft.kind = b.dataset.kind;
             draft.source = firstAvailable(draft.kind);
             draft.position = 0;
+            draft.pace = DEFAULT_PACE[draft.kind];
             refreshSource();
         });
     }
@@ -151,11 +238,16 @@ export async function renderPlanForm(trackId) {
 
     form.addEventListener("submit", (e) => {
         e.preventDefault();
+        if (draft.kind === "hymns" && !draft.hymns?.length) {
+            $("#hymn-search").focus();
+            return toast("Choose at least one hymn.");
+        }
         if (editing) {
             // A new goal counts from today, so the pace is worked out from what's left
             if (draft.pace.mode === "goal" && JSON.stringify(draft.pace) !== JSON.stringify(editing.pace)) editing.start = today();
             if (draft.position !== editing.position) editing.credit = 0;
             Object.assign(editing, { pace: draft.pace, position: draft.position });
+            if (draft.kind === "hymns") editing.hymns = draft.hymns;
             save();
         } else {
             newTrack(draft);

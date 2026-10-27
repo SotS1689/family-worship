@@ -4,7 +4,8 @@
 // {
 //   version: 1,
 //   settings: { bibleVersion: "bsb" | "kjv", worshipDays: [Sun..Sat booleans], theme: "auto" | "light" | "dark" },
-//   tracks: [{ id, kind, source, pace, start, position, credit, laps, paused }],
+//   tracks: [{ id, kind, source, pace, start, position, credit, laps, paused, hymns? }],
+//            (hymns: the hymn ids a hymn track goes through; position counts within them)
 //   log: { "YYYY-MM-DD": { at, entries: [{ track, from, count, review, credit }], late? } }
 // }
 import { today } from "./dates.js";
@@ -50,11 +51,12 @@ export function save() {
 // Ask the browser not to clear our data when space runs low (installed apps usually get this)
 navigator.storage?.persist?.().catch(() => {});
 
-export function newTrack({ kind, source, pace, start = today(), position = 0 }) {
+export function newTrack({ kind, source, pace, start = today(), position = 0, hymns }) {
     const track = {
         id: Math.random().toString(36).slice(2, 10),
         kind, source, pace, start, position,
         credit: 0, laps: 0, paused: false,
+        ...(kind === "hymns" ? { hymns } : {}),
     };
     state.tracks.push(track);
     // Bible, then catechism, then hymns: the usual order of family worship
