@@ -37,7 +37,19 @@ export const SOURCES = {
     },
     catechism: {
         wsc: { name: "Westminster Shorter Catechism", short: "WSC", unit: "question" },
-        bc1695: { name: "Baptist Catechism (1695)", short: "Baptist Catechism", unit: "question" },
+        bc1695: {
+            name: "Baptist Catechism (1695)",
+            short: "Baptist Catechism",
+            about: "Every question is sung, from Jim Scott Orrick's The Baptist Catechism Set to Music.",
+            unit: "question",
+            // Orrick's settings as baptistcatechism.org (Silicon Valley Reformed Baptist Church)
+            // publishes them, one recording per question, played from their storage
+            music: {
+                url: (n) => `https://baptistcatechism-org.storage.googleapis.com/orrick-catechism/orrick-catechism-${String(n).padStart(3, "0")}.mp3`,
+                page: (n) => `https://baptistcatechism.org/${n}/`,
+                credit: "The Baptist Catechism Set to Music by Jim Scott Orrick, © 2001. Used by permission. Recording via baptistcatechism.org.",
+            },
+        },
         heidelberg: { name: "Heidelberg Catechism", short: "Heidelberg", unit: "question" },
         collins: {
             name: "An Orthodox Catechism (Collins, 1680)",

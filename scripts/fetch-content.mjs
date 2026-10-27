@@ -74,7 +74,8 @@ for (const [id, file] of Object.entries(CATECHISMS)) {
     const questions = src.Data.map((d) => ({
         n: d.Number,
         q: d.Question,
-        a: d.Answer,
+        // A few have only the version with proof marks ("...makes himself known[1].")
+        a: d.Answer || (d.AnswerWithProofs || "").replace(/\s*\[\d+\]/g, ""),
         proofs: (d.Proofs || []).flatMap((p) => p.References || []),
     }));
     write(`catechisms/${id}.json`, {

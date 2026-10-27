@@ -56,6 +56,7 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 | King James Version | [eBible.org `eng-kjv2006`](https://ebible.org/details.php?id=eng-kjv2006) | Public domain (outside the UK) |
 | Westminster Shorter, 1695 Baptist and Heidelberg catechisms | [Creeds.json](https://github.com/NonlinearFruit/Creeds.json) | Public-domain texts |
 | An Orthodox Catechism (Hercules Collins, 1680) | The pastor's Word document `The Orthodox Catechism.docx`, imported by `scripts/import_collins.py` | Public-domain text |
+| Baptist Catechism music | Jim Scott Orrick, *The Baptist Catechism Set to Music*. Played from [baptistcatechism.org](https://baptistcatechism.org)'s storage, not copied here (see `music` in `src/catalog.js`) | © 2001 Orrick, used by permission on baptistcatechism.org. That site's developer has allowed its use here. |
 | Hymns and psalms | [Let's Sing](https://github.com/SotS1689/lets-sing) `hymns_data.json` | As Let's Sing |
 | M'Cheyne calendar | [willswire/mcheyne](https://github.com/willswire/mcheyne) | Apache-2.0 |
 | Chronological plan | [bennythadikaran/bible](https://github.com/bennythadikaran/bible) | GPL-3.0 repo, plan from biblestudytools.com |
@@ -72,7 +73,8 @@ few typing slips in the proof texts. All of these fixes are listed at the top of
 
 ### Still to add
 
-- **Catechism songs.** The reader shows a "Listen" button for any question listed in
+- **More catechism songs.** The Baptist Catechism is sung throughout (see the table above).
+  For the other catechisms, the reader shows a "Listen" button for any question listed in
   `public/data/catechism-songs.json`:
   `{ "wsc": { "1": { "title": "Q1 – Chief End", "url": "https://..." } } }`.
   Free recordings exist for the Westminster Shorter Catechism, for example Pastor Michael

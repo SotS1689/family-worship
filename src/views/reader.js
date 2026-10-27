@@ -3,7 +3,7 @@ import { state, save } from "../store.js";
 import { BOOK, VERSIONS, passageLabel } from "../bible.js";
 import { loadBook, loadCatechismSongs } from "../content.js";
 import { LETS_SING_URL } from "../catalog.js";
-import { app, esc, setTitle, unitsOf, trackName, nextRender, isCurrent } from "../ui.js";
+import { app, esc, setTitle, unitsOf, trackName, sourceOf, nextRender, isCurrent } from "../ui.js";
 
 export async function renderReader(trackId, index) {
     const ticket = nextRender();
@@ -60,12 +60,20 @@ async function bibleHtml(unit) {
 }
 
 async function catechismHtml(track, unit) {
+    const music = sourceOf(track)?.music;
     const song = (await loadCatechismSongs())[track.source]?.[unit.n];
     return `
         <p class="qnum">Question ${unit.n}</p>
         <h1 class="question">${esc(unit.q)}</h1>
         <div class="answer">${unit.a.split("\n\n").map((p) => `<p>${esc(p)}</p>`).join("")}</div>
-        ${song ? `<a class="btn primary" href="${esc(song.url)}" target="_blank" rel="noopener">♪ Listen: ${esc(song.title || "sung version")}</a>` : ""}
+        ${music ? `
+            <figure class="sung">
+                <figcaption>♪ Sing it</figcaption>
+                <audio controls preload="none" src="${esc(music.url(unit.n))}"></audio>
+                <p class="muted small">${esc(music.credit)}
+                    <a href="${esc(music.page(unit.n))}" target="_blank" rel="noopener">More on this question</a></p>
+            </figure>`
+        : song ? `<a class="btn primary" href="${esc(song.url)}" target="_blank" rel="noopener">♪ Listen: ${esc(song.title || "sung version")}</a>` : ""}
         ${unit.proofs?.length ? `<details><summary>Scripture proofs</summary><p>${unit.proofs.map(esc).join("; ")}</p></details>` : ""}`;
 }
 
