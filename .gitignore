@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# Raw downloads made by scripts/fetch-content.mjs (the processed copies live in public/data/)
+sources/
