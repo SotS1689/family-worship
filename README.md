@@ -54,6 +54,8 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 |---|---|---|
 | Berean Standard Bible (text, and its paragraph breaks from the USFM edition) | [eBible.org `engbsb`](https://ebible.org/details.php?id=engbsb) | Public domain |
 | King James Version | [eBible.org `eng-kjv2006`](https://ebible.org/details.php?id=eng-kjv2006) | Public domain (outside the UK) |
+| English Standard Version | Crossway's [ESV API](https://api.esv.org), read as each passage opens with the family's own key (entered in Settings, never in this repo; see `src/esv.js`) | © Crossway, free for non-commercial use under the API terms |
+| Other online translations | [Free Use Bible API](https://bible.helloao.org), read as each chapter opens | Public domain or free licences (see `VERSIONS` in `src/bible.js`) |
 | Westminster Shorter, 1695 Baptist and Heidelberg catechisms | [Creeds.json](https://github.com/NonlinearFruit/Creeds.json) | Public-domain texts |
 | An Orthodox Catechism (Hercules Collins, 1680) | The pastor's Word document `The Orthodox Catechism.docx`, imported by `scripts/import_collins.py` | Public-domain text |
 | Baptist Catechism music | Jim Scott Orrick, *The Baptist Catechism Set to Music*. Played from [baptistcatechism.org](https://baptistcatechism.org)'s storage, not copied here (see `music` in `src/catalog.js`) | © 2001 Orrick, used by permission on baptistcatechism.org. That site's developer has allowed its use here. |

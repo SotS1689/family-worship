@@ -44,13 +44,15 @@ function findBook(name) {
 const USFM = { SOL: "SNG", EZE: "EZK", JOE: "JOL", NAH: "NAM", MAR: "MRK", JOH: "JHN", PHI: "PHP", JAM: "JAS", "1JO": "1JN", "2JO": "2JN", "3JO": "3JN" };
 export const usfmCode = (code) => USFM[code] ?? code;
 
-// bsb and kjv are kept in the app and work offline. The others are read from the
-// Free Use Bible API (bible.helloao.org) as each chapter is opened, so they need
-// the internet; `online` is the API's id for the translation, `credit` the notice
-// its licence asks for.
+// bsb and kjv are kept in the app and work offline. The esv is read from Crossway's
+// ESV API; the others from the Free Use Bible API (bible.helloao.org) as each
+// chapter is opened, so they need the internet. `online` is that API's id for the
+// translation, `credit` the notice its licence asks for.
 export const VERSIONS = {
     bsb: { name: "Berean Standard Bible", short: "BSB" },
     kjv: { name: "King James Version", short: "KJV" },
+    // From Crossway's ESV API, with the family's own key (see esv.js)
+    esv: { name: "English Standard Version", short: "ESV", esv: true },
     gnv: { name: "Geneva Bible (1599)", short: "Geneva", online: "eng_gnv" },
     asv: { name: "American Standard Version (1901)", short: "ASV", online: "eng_asv" },
     rv: { name: "Revised Version (1885)", short: "RV", online: "eng_rv5" },

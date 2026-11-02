@@ -2,8 +2,9 @@
 import { state, save } from "../store.js";
 import { BOOK, VERSIONS, passageLabel } from "../bible.js";
 import { loadChapter, loadCatechismSongs } from "../content.js";
+import { esvPassage, EsvError } from "../esv.js";
 import { LETS_SING_URL } from "../catalog.js";
-import { app, esc, setTitle, unitsOf, trackName, sourceOf, nextRender, isCurrent, bibleVersion, versionOptions } from "../ui.js";
+import { app, esc, setTitle, unitsOf, trackName, sourceOf, nextRender, isCurrent, bibleVersion, versionOptions, isOnline } from "../ui.js";
 
 export async function renderReader(trackId, index) {
     const ticket = nextRender();
@@ -46,18 +47,22 @@ async function bibleHtml(unit) {
     const several = unit.passages.length > 1;
     const sections = await Promise.all(unit.passages.map(async (p) => {
         try {
-            const verses = (await loadChapter(version, p.book, p.chapter)).filter(([v]) => (p.from == null || v >= p.from) && (p.to == null || v <= p.to));
+            const all = info.esv ? await esvPassage(p) : await loadChapter(version, p.book, p.chapter);
+            const verses = all.filter(([v]) => (p.from == null || v >= p.from) && (p.to == null || v <= p.to));
             // A verse the BSB leaves out of its text (Matthew 18:11) but the KJV has
             if (!verses.length) return `<section><p class="muted">${esc(passageLabel(p))} isn't in the ${esc(info.short)}'s text. Switch versions to read it.</p></section>`;
             return `<section>${several ? `<h2>${esc(passageLabel(p))}</h2>` : ""}<p class="verses">${verses.map(([v, t]) => `<sup>${v}</sup>${verseText(t, version)}`).join(" ")}</p></section>`;
-        } catch {
-            return `<section><h2>${esc(passageLabel(p))}</h2><p class="muted">Couldn't load ${esc(BOOK[p.book].name)}${info.online
+        } catch (e) {
+            if (e instanceof EsvError) return `<section><p class="muted">${esc(e.message)}</p><a class="btn" href="#/settings">Open Settings</a></section>`;
+            return `<section><h2>${esc(passageLabel(p))}</h2><p class="muted">Couldn't load ${esc(BOOK[p.book].name)}${isOnline(info)
                 ? ` in the ${esc(info.short)}, which is read from the internet. Check your connection, or switch to the BSB or KJV.`
                 : " — check your connection."}</p></section>`;
         }
     }));
-    const credit = info.online ? `<p class="credits muted small">${esc(info.credit ?? `${info.name}.`)} Read from the
-        <a href="https://bible.helloao.org" target="_blank" rel="noopener">Free Use Bible API</a>.</p>` : "";
+    const credit = info.esv ? `<p class="credits muted small">Scripture quotations are from the ESV® Bible, © 2001 by Crossway.
+            Used by permission. All rights reserved. <a href="https://www.esv.org" target="_blank" rel="noopener">esv.org</a></p>`
+        : info.online ? `<p class="credits muted small">${esc(info.credit ?? `${info.name}.`)} Read from the
+            <a href="https://bible.helloao.org" target="_blank" rel="noopener">Free Use Bible API</a>.</p>` : "";
     return `<header class="reader-head"><h1>${esc(unit.label)}</h1>${switcher}</header>${sections.join("")}${credit}`;
 }
 

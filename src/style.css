@@ -223,3 +223,6 @@ fieldset[disabled] .seg { opacity: .7; }
 }
 .day input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .day input:focus-visible + span { outline: 2px solid var(--gold); }
+.esv summary { cursor: pointer; margin: .25rem 0; }
+.key-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
+.key-row input { flex: 1 1 12rem; min-width: 0; font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .45rem .6rem; }

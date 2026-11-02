@@ -69,9 +69,10 @@ export const bibleVersion = () => VERSIONS[state.settings.bibleVersion] ? state.
 export function versionOptions(current, label) {
     const option = ([v, info]) => `<option value="${v}" ${v === current ? "selected" : ""}>${esc(label === "short" ? info.short : info.name)}</option>`;
     const all = Object.entries(VERSIONS);
-    return `<optgroup label="On this device">${all.filter(([, i]) => !i.online).map(option).join("")}</optgroup>
-        <optgroup label="Online (needs internet)">${all.filter(([, i]) => i.online).map(option).join("")}</optgroup>`;
+    return `<optgroup label="On this device">${all.filter(([, i]) => !isOnline(i)).map(option).join("")}</optgroup>
+        <optgroup label="Online (needs internet)">${all.filter(([, i]) => isOnline(i)).map(option).join("")}</optgroup>`;
 }
+export const isOnline = (info) => !!(info.online || info.esv);
 
 export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
