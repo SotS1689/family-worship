@@ -4,8 +4,35 @@
     {
       "name": "family-worship",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "family-worship-local-lets-sing",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:lets-sing"
+      ],
+      "port": 5175
+    },
+    {
+      "name": "lets-sing-build",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--prefix",
+        "C:/Users/11tdr/Code/Let's Sing App/web",
+        "vite",
+        "preview",
+        "C:/Users/11tdr/Code/Let's Sing App/web",
+        "--port",
+        "4174",
+        "--strictPort"
+      ],
+      "port": 4174
     }
   ]
 }

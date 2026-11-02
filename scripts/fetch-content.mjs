@@ -6,6 +6,7 @@
 //               -> public/data/catechisms/<id>.json
 //   Hymns       SotS1689/lets-sing hymns_data.json (the Let's Sing master copy)
 //               -> public/data/hymns.json
+//               and its hymn-list matcher, web/src/match.js -> src/vendor/match.js
 //   Plans       M'Cheyne: willswire/mcheyne PlanConstants.swift (Apache-2.0)
 //               Chronological: bennythadikaran/bible bible.json (365-day chronological)
 //               -> public/data/plans/<id>.json
@@ -141,6 +142,14 @@ write("hymns.json", hymns.map((h) => ({
     verses: h.verses || [],
     credits: h.credits || "",
 })));
+// The matcher behind "Paste a list", the same one Let's Sing uses
+writeFileSync("src/vendor/match.js", "// Copied from Let's Sing (SotS1689/lets-sing, web/src/match.js) by
+"
+    + "// scripts/fetch-content.mjs: change it there, then run npm run fetch-content.
+
+"
+    + await text("https://raw.githubusercontent.com/SotS1689/lets-sing/main/web/src/match.js", "match.js"));
+console.log("  wrote src/vendor/match.js");
 
 // ---- Reading plans ----
 // Each plan file is a list of days; each day a list of reference strings

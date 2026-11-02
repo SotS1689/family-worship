@@ -15,6 +15,7 @@ Everything is stored on the phone. There are no accounts and no server.
 |---|---|
 | `npm install` | One-time setup. |
 | `npm run dev` | Runs the app at http://localhost:5173 and reloads as you edit. |
+| `npm run dev:lets-sing` | The same at http://localhost:5175, with hymns played by a local Let's Sing build at http://localhost:4174 (see "Let's Sing" below). |
 | `npm test` | Checks the scheduling and streak logic (`tests/`). |
 | `npm run build` | Makes the finished site in `dist/`. |
 | `npm run preview` | Serves `dist/` at http://localhost:4173 to try the real build, offline mode included. |
@@ -41,12 +42,36 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
   1 question a week), the days in between show the current question as a review.
   A **goal** recalculates the pace every day from what's left, so missed days are spread
   over the rest of the time. A fixed **pace** just finishes later.
+- `src/letsSing.js` puts Let's Sing in a hymn's page and saves hymns for offline use
+  (see "Let's Sing" below).
 - `src/stats.js` computes streaks, faithfulness percentages and weekly counts. Days the
   family doesn't plan to worship (Settings → Worship days) don't break a streak.
 - `src/store.js` holds the saved data. Its shape is documented at the top of the file.
 - `sw-template.js` and `scripts/stamp-sw.mjs` are the offline service worker. The app,
   catechisms, hymns and plans are cached at install. Each Bible book is cached the
   first time it's opened.
+
+## Let's Sing
+
+A hymn's page is Let's Sing's own hymn page in a frame the height of the screen:
+the four-part player, the sheet music with each note lit as it sounds, and the words
+following along. It comes from the live Let's Sing site (`LETS_SING_URL` in
+`src/catalog.js`) in its embed mode (`?embed`, described in the embed section of
+Let's Sing's `web/src/main.js`), which leaves out its top bar, favorites star, support
+ask and Google Analytics. So any fix to Let's Sing shows up here as soon as it's
+published there. Until the player loads, or if it can't, the page shows the words.
+
+- **Choosing hymns.** The search covers title, first line, tune, composer and number,
+  ignoring accents and punctuation as Let's Sing's does. **Paste a list** matches a
+  pasted list of hymns with Let's Sing's own matcher, copied into `src/vendor/match.js`
+  by `npm run fetch-content`.
+- **Offline use.** On a hymn plan's page, **Offline use** saves the plan's hymns.
+  Let's Sing keeps them, in its own offline store, through a hidden Let's Sing frame that
+  answers which hymns are saved and saves more. A hymn is also saved the first time it's
+  played. Saving only works on the published sites, where Let's Sing's service worker runs.
+- **Trying Let's Sing changes here before publishing them:** in Let's Sing's `web`
+  folder run `npm run build`, then `npx vite preview --port 4174`; here, run
+  `npm run dev:lets-sing` (it reads `.env.lets-sing`).
 
 ## Content and sources
 
@@ -59,7 +84,7 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 | Westminster Shorter, 1695 Baptist and Heidelberg catechisms | [Creeds.json](https://github.com/NonlinearFruit/Creeds.json) | Public-domain texts |
 | An Orthodox Catechism (Hercules Collins, 1680) | The pastor's Word document `The Orthodox Catechism.docx`, imported by `scripts/import_collins.py` | Public-domain text |
 | Baptist Catechism music | Jim Scott Orrick, *The Baptist Catechism Set to Music*. Played from [baptistcatechism.org](https://baptistcatechism.org)'s storage, not copied here (see `music` in `src/catalog.js`) | © 2001 Orrick, used by permission on baptistcatechism.org. That site's developer has allowed its use here. |
-| Hymns and psalms | [Let's Sing](https://github.com/SotS1689/lets-sing) `hymns_data.json` | As Let's Sing |
+| Hymns and psalms | [Let's Sing](https://github.com/SotS1689/lets-sing) `hymns_data.json`; played by Let's Sing itself, embedded (see above) | As Let's Sing |
 | M'Cheyne calendar | [willswire/mcheyne](https://github.com/willswire/mcheyne) | Apache-2.0 |
 | Chronological plan | [bennythadikaran/bible](https://github.com/bennythadikaran/bible) | GPL-3.0 repo, plan from biblestudytools.com |
 

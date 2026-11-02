@@ -66,7 +66,7 @@ export const SOURCES = {
     hymns: {
         "lets-sing": {
             name: "Let's Sing hymns & psalms",
-            about: "Choose hymns and psalms from Let's Sing; they come up in Let's Sing's numbering. Each opens in Let's Sing to sing along in four parts.",
+            about: "Choose hymns and psalms from Let's Sing; they come up in Let's Sing's numbering. Each one's page has Let's Sing's player, to sing along in four parts with the music and words following.",
             unit: "hymn",
         },
     },
@@ -81,4 +81,6 @@ export const GOALS = [
     { days: 1095, label: "3 years" },
 ];
 
-export const LETS_SING_URL = "https://sots1689.github.io/lets-sing/";
+// Where Let's Sing lives. To try Let's Sing changes here before publishing them,
+// run its dev server and start this one with VITE_LETS_SING_URL=http://localhost:5174/
+export const LETS_SING_URL = import.meta.env?.VITE_LETS_SING_URL || "https://taylordrummond.org/lets-sing/";

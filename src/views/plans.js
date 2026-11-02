@@ -3,6 +3,7 @@ import { state, save, newTrack } from "../store.js";
 import { today, formatDay } from "../dates.js";
 import { unitsPerDay, projectedFinish } from "../schedule.js";
 import { KINDS, SOURCES, GOALS } from "../catalog.js";
+import { offlineStatus, saveOffline } from "../letsSing.js";
 import { app, $, esc, setTitle, unitsOf, sourceUnits, totalsFor, trackName, kindIcon, paceText, rateText, unitWord, plural, nextRender, isCurrent, toast } from "../ui.js";
 
 export async function renderPlans() {
@@ -77,7 +78,7 @@ export async function renderPlanForm(trackId) {
             </fieldset>
             <fieldset id="hymn-pick" hidden>
                 <legend>Which hymns</legend>
-                <input type="search" id="hymn-search" placeholder="Search title, tune or number" aria-label="Search hymns">
+                <input type="search" id="hymn-search" placeholder="Search title, first line, tune or number" aria-label="Search hymns">
                 <div class="pick-bar">
                     <span id="hymn-count"></span>
                     <label class="small"><input type="checkbox" id="chosen-only"> Show chosen only</label>
@@ -87,6 +88,20 @@ export async function renderPlanForm(trackId) {
                     <button type="button" class="btn small" id="clear-shown">Clear all shown</button>
                 </div>
                 <ul class="pick-list" id="hymn-list"></ul>
+                <details class="more" id="paste">
+                    <summary>Paste a list</summary>
+                    <p class="muted small">Paste hymn titles, one per line, from a bulletin, an email or a spreadsheet.
+                        Numbers and bullets are fine, and so are first lines, tune names and psalm numbers (“Psalm 23”).</p>
+                    <textarea id="paste-text" rows="6" aria-label="Hymn list"
+                        placeholder="Holy, Holy, Holy&#10;Psalm 100&#10;When I survey the wondrous cross"></textarea>
+                    <button type="button" class="btn small" id="paste-find">Find these hymns</button>
+                    <div id="paste-results"></div>
+                </details>
+                <details class="more" id="offline">
+                    <summary>Offline use</summary>
+                    <p class="small" id="offline-text">Checking which hymns are saved on this device…</p>
+                    <button type="button" class="btn small" id="offline-save" hidden></button>
+                </details>
             </fieldset>
             <fieldset>
                 <legend>How fast</legend>
@@ -193,11 +208,23 @@ export async function renderPlanForm(trackId) {
 
     // ---- Hymn picker ----
     let allHymns = [];
+    // As Let's Sing searches: accents, apostrophes and punctuation don't matter.
+    // The first line finds a hymn known by it rather than by its title.
+    const fold = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, " ");
+    const searchText = new WeakMap();
+    const searchOf = (h) => {
+        if (!searchText.has(h)) {
+            const firstLine = (h.verses[0] ?? "").split("\n")[0].replace(/^\s*\d+\.?\s*/, "");
+            searchText.set(h, ` ${fold(`${h.id} ${h.title} ${firstLine} ${h.tune} ${h.composer}`)} `);
+        }
+        return searchText.get(h);
+    };
     const shownHymns = () => {
-        const words = $("#hymn-search").value.toLowerCase().split(/\s+/).filter(Boolean);
+        const words = fold($("#hymn-search").value).split(" ").filter(Boolean);
         const chosen = new Set(draft.hymns);
+        // A number on its own is a whole number: "23" finds Psalm 23, not 123
         return allHymns.filter((h) => (!$("#chosen-only").checked || chosen.has(h.id))
-            && words.every((w) => `${h.id} ${h.title} ${h.tune} ${h.composer}`.toLowerCase().includes(w)));
+            && words.every((w) => searchOf(h).includes(/^\d+$/.test(w) ? ` ${w} ` : w)));
     };
     function refreshHymnList() {
         const chosen = new Set(draft.hymns);
@@ -222,6 +249,7 @@ export async function renderPlanForm(trackId) {
         draft.position = at === -1 ? draft.hymns.length : at;
         refreshHymnCount();
         refreshUnits();
+        if ($("#offline").open) refreshOffline();
     }
     $("#hymn-list").addEventListener("change", (e) => {
         const id = e.target.value;
@@ -238,6 +266,114 @@ export async function renderPlanForm(trackId) {
         const shown = new Set(shownHymns().map((h) => h.id));
         setChosen(draft.hymns.filter((id) => !shown.has(id)));
         refreshHymnList();
+    });
+
+    // ---- Paste a list (Let's Sing's matcher, src/vendor/match.js) ----
+    // Lines it's sure of come ticked with their hymn; the rest offer the nearest hymns
+    let matches = [];
+    const hymnLabel = (h) => `${h.label}${h.tune ? ` — ${h.tune}` : ""}`;
+    $("#paste-find").addEventListener("click", async () => {
+        const { matchList } = await import("../vendor/match.js");
+        const all = matchList($("#paste-text").value, allHymns);
+        matches = all.filter((m) => m.confidence !== "none");
+        const notFound = all.filter((m) => m.confidence === "none")
+            .map((m) => `<p class="muted small">Couldn't find “${esc(m.line)}”</p>`).join("");
+        const chosen = new Set(draft.hymns);
+        $("#paste-results").innerHTML = !all.length ? `<p class="hint">Paste some hymn titles above first.</p>` : `
+            ${notFound}
+            ${matches.length ? `<ul class="pick-list matches">${matches.map((m, i) => `
+                <li><label><input type="checkbox" data-pick="${i}" checked>
+                    <span><span class="muted small">${esc(m.line)}</span><br>
+                    ${m.confidence === "sure" ? esc(hymnLabel(m.candidates[0].hymn))
+                        : `<select data-choice="${i}" aria-label="Hymn for “${esc(m.line)}”">${m.candidates.map((c) =>
+                            `<option value="${esc(c.hymn.id)}">${esc(hymnLabel(c.hymn))}</option>`).join("")}</select>
+                           <br><span class="small muted">${m.tunes ? "Sung to more than one tune: pick the one you want" : "Check this one"}</span>`}
+                    ${m.confidence === "sure" && chosen.has(m.candidates[0].hymn.id) ? `<span class="small muted"> · already chosen</span>` : ""}</span>
+                </label></li>`).join("")}</ul>
+            <button type="button" class="btn small primary" id="paste-add"></button>` : ""}`;
+        refreshPasteAdd();
+    });
+    const pickedIds = () => matches.flatMap((m, i) => $(`#paste-results [data-pick="${i}"]`).checked
+        ? [$(`#paste-results [data-choice="${i}"]`)?.value ?? m.candidates[0].hymn.id] : []);
+    function refreshPasteAdd() {
+        const btn = $("#paste-add");
+        if (!btn) return;
+        const n = pickedIds().length;
+        btn.textContent = n ? `Choose ${plural(n, "hymn")}` : "Nothing ticked";
+        btn.disabled = !n;
+    }
+    $("#paste-results").addEventListener("change", (e) => {
+        // Picking a hymn for a line means you want it
+        const i = e.target.dataset.choice;
+        if (i) $(`#paste-results [data-pick="${i}"]`).checked = true;
+        refreshPasteAdd();
+    });
+    $("#paste-results").addEventListener("click", (e) => {
+        if (e.target.id !== "paste-add") return;
+        const before = draft.hymns.length;
+        setChosen([...draft.hymns, ...pickedIds()]);
+        refreshHymnList();
+        const added = draft.hymns.length - before;
+        $("#paste-text").value = "";
+        $("#paste-results").innerHTML = "";
+        matches = [];
+        toast(added ? `Chose ${plural(added, "more hymn")}` : "Those were already chosen");
+    });
+
+    // ---- Offline use ----
+    // Let's Sing keeps the saved hymns (src/letsSing.js). Asked only once this is
+    // opened, since asking loads Let's Sing in the background.
+    let saving = false;
+    async function refreshOffline() {
+        const text = $("#offline-text"), btn = $("#offline-save");
+        if (saving) return;
+        if (!draft.hymns.length) {
+            text.textContent = "Choose some hymns first.";
+            return (btn.hidden = true);
+        }
+        let status;
+        try {
+            status = await offlineStatus(draft.hymns);
+        } catch (e) {
+            if (!isCurrent(ticket)) return;
+            text.textContent = `${e.message} Saving hymns needs the internet.`;
+            return (btn.hidden = true);
+        }
+        if (!isCurrent(ticket) || saving) return;
+        if (!status.offline) {
+            text.textContent = "Saving hymns works only in the published app, where Let's Sing's offline support runs.";
+            return (btn.hidden = true);
+        }
+        const withMusic = draft.hymns.length - status.noMusic.length;
+        const saved = status.saved.length;
+        const n = status.noMusic.length;
+        const noMusic = n ? ` ${plural(n, "chosen hymn")} ${n === 1 ? "has" : "have"} no music yet.` : "";
+        text.textContent = saved === withMusic
+            ? `${withMusic === 1 ? "This plan's hymn is" : `All ${withMusic} of this plan's hymns are`} saved on this device, so the player works without internet.${noMusic}`
+            : `${saved} of ${plural(withMusic, "hymn")} saved on this device. Save them so the player works without internet.${noMusic}`;
+        btn.hidden = saved === withMusic;
+        btn.disabled = false;
+        btn.textContent = saved ? "Save the rest" : withMusic === 1 ? "Save it" : `Save all ${withMusic}`;
+    }
+    $("#offline").addEventListener("toggle", () => $("#offline").open && refreshOffline());
+    $("#offline-save").addEventListener("click", async () => {
+        const btn = $("#offline-save");
+        if (!navigator.onLine) return toast("Connect to the internet to save hymns.");
+        saving = true;
+        btn.disabled = true;
+        btn.textContent = "Saving…";
+        let failed = false;
+        try {
+            await saveOffline(draft.hymns, (done, total) => (btn.textContent = `Saving… ${done} of ${total} files`));
+        } catch (e) {
+            failed = true;
+            toast(e.message);
+        }
+        saving = false;
+        if (!isCurrent(ticket)) return;
+        await refreshOffline();
+        if (failed) return;
+        toast(btn.hidden ? "Saved. These hymns now play without internet." : "Some didn't save. Check your connection and try again.");
     });
 
     function refreshPace() {

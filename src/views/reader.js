@@ -3,7 +3,7 @@ import { state, save } from "../store.js";
 import { BOOK, VERSIONS, passageLabel } from "../bible.js";
 import { loadChapter, loadCatechismSongs } from "../content.js";
 import { esvPassage, EsvError } from "../esv.js";
-import { LETS_SING_URL } from "../catalog.js";
+import { mountPlayer, hymnPageUrl } from "../letsSing.js";
 import { app, esc, setTitle, unitsOf, trackName, sourceOf, nextRender, isCurrent, bibleVersion, versionOptions, isOnline } from "../ui.js";
 
 export async function renderReader(trackId, index) {
@@ -28,6 +28,7 @@ export async function renderReader(trackId, index) {
     else body = hymnHtml(unit);
     if (!isCurrent(ticket)) return;
     app().innerHTML = `<article class="reader ${track.kind}">${body}</article>${nav}`;
+    if (track.kind === "hymns") startPlayer(unit);
 
     app().querySelector("#version")?.addEventListener("change", (e) => {
         state.settings.bibleVersion = e.target.value;
@@ -84,11 +85,28 @@ async function catechismHtml(track, unit) {
         ${unit.proofs?.length ? `<details><summary>Scripture proofs</summary><p>${unit.proofs.map(esc).join("; ")}</p></details>` : ""}`;
 }
 
+// Let's Sing's page for the hymn: its title, player, music and the words, which
+// follow along as they're sung. Until it loads (or if it can't), the words are shown here.
 function hymnHtml(unit) {
     return `
-        <h1>${esc(unit.title)}</h1>
-        <p class="muted">${esc([unit.tune, unit.composer].filter(Boolean).join(" · "))}</p>
-        <a class="btn primary" href="${LETS_SING_URL}#/hymn/${encodeURIComponent(unit.id)}" target="_blank" rel="noopener">♪ Sing along in Let's Sing</a>
-        <div class="verses-hymn">${unit.verses.map((v) => `<p>${esc(v)}</p>`).join("")}</div>
-        ${unit.credits ? `<p class="credits muted small">${esc(unit.credits)}</p>` : ""}`;
+        <div class="sing-slot" id="sing-slot"></div>
+        <div id="hymn-words">
+            <h1>${esc(unit.title)}</h1>
+            <p class="muted">${esc([unit.tune, unit.composer].filter(Boolean).join(" · "))}</p>
+            <p class="muted small" id="sing-note">Loading the Let's Sing player…</p>
+            <div class="verses-hymn">${unit.verses.map((v) => `<p>${esc(v)}</p>`).join("")}</div>
+            ${unit.credits ? `<p class="credits muted small">${esc(unit.credits)}</p>` : ""}
+        </div>
+        <p class="credits small"><a href="${esc(hymnPageUrl(unit.id))}" target="_blank" rel="noopener">Open in Let's Sing ↗</a></p>`;
+}
+
+function startPlayer(unit) {
+    const slot = app().querySelector("#sing-slot");
+    const note = app().querySelector("#sing-note");
+    mountPlayer(slot, unit.id, {
+        onReady: () => (app().querySelector("#hymn-words").hidden = true),
+        onFail: () => {
+            note.textContent = "Couldn't load the Let's Sing player. Check your connection, or save this plan's hymns for offline use (Plans → this plan).";
+        },
+    });
 }
