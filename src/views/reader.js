@@ -1,9 +1,9 @@
 // One unit of a track: a day's Bible passages, a catechism question, or a hymn.
 import { state, save } from "../store.js";
 import { BOOK, VERSIONS, passageLabel } from "../bible.js";
-import { loadBook, loadCatechismSongs } from "../content.js";
+import { loadChapter, loadCatechismSongs } from "../content.js";
 import { LETS_SING_URL } from "../catalog.js";
-import { app, esc, setTitle, unitsOf, trackName, sourceOf, nextRender, isCurrent } from "../ui.js";
+import { app, esc, setTitle, unitsOf, trackName, sourceOf, nextRender, isCurrent, bibleVersion, versionOptions } from "../ui.js";
 
 export async function renderReader(trackId, index) {
     const ticket = nextRender();
@@ -28,37 +28,37 @@ export async function renderReader(trackId, index) {
     if (!isCurrent(ticket)) return;
     app().innerHTML = `<article class="reader ${track.kind}">${body}</article>${nav}`;
 
-    for (const b of app().querySelectorAll("[data-version]")) {
-        b.addEventListener("click", () => {
-            state.settings.bibleVersion = b.dataset.version;
-            save();
-            renderReader(trackId, index);
-        });
-    }
+    app().querySelector("#version")?.addEventListener("change", (e) => {
+        state.settings.bibleVersion = e.target.value;
+        save();
+        renderReader(trackId, index);
+    });
     window.scrollTo(0, 0);
 }
 
 // The KJV's [bracketed] words were supplied by the translators: shown in italics, as printed
-const verseText = (t) => esc(t).replace(/\[([^\]]*)\]/g, "<em>$1</em>");
+const verseText = (t, version) => version === "kjv" ? esc(t).replace(/\[([^\]]*)\]/g, "<em>$1</em>") : esc(t);
 
 async function bibleHtml(unit) {
-    const version = state.settings.bibleVersion;
-    const switcher = `<div class="seg" role="group" aria-label="Bible version">
-        ${Object.entries(VERSIONS).map(([v, info]) => `<button data-version="${v}" class="${v === version ? "on" : ""}" title="${esc(info.name)}">${info.short}</button>`).join("")}
-    </div>`;
+    const version = bibleVersion();
+    const info = VERSIONS[version];
+    const switcher = `<select id="version" class="version" aria-label="Bible version">${versionOptions(version, "short")}</select>`;
     const several = unit.passages.length > 1;
     const sections = await Promise.all(unit.passages.map(async (p) => {
         try {
-            const book = await loadBook(version, p.book);
-            const verses = book[p.chapter - 1].filter(([v]) => (p.from == null || v >= p.from) && (p.to == null || v <= p.to));
+            const verses = (await loadChapter(version, p.book, p.chapter)).filter(([v]) => (p.from == null || v >= p.from) && (p.to == null || v <= p.to));
             // A verse the BSB leaves out of its text (Matthew 18:11) but the KJV has
-            if (!verses.length) return `<section><p class="muted">${esc(passageLabel(p))} isn't in the ${VERSIONS[version].short}'s text. Switch versions to read it.</p></section>`;
-            return `<section>${several ? `<h2>${esc(passageLabel(p))}</h2>` : ""}<p class="verses">${verses.map(([v, t]) => `<sup>${v}</sup>${verseText(t)}`).join(" ")}</p></section>`;
+            if (!verses.length) return `<section><p class="muted">${esc(passageLabel(p))} isn't in the ${esc(info.short)}'s text. Switch versions to read it.</p></section>`;
+            return `<section>${several ? `<h2>${esc(passageLabel(p))}</h2>` : ""}<p class="verses">${verses.map(([v, t]) => `<sup>${v}</sup>${verseText(t, version)}`).join(" ")}</p></section>`;
         } catch {
-            return `<section><h2>${esc(passageLabel(p))}</h2><p class="muted">Couldn't load ${esc(BOOK[p.book].name)} — check your connection.</p></section>`;
+            return `<section><h2>${esc(passageLabel(p))}</h2><p class="muted">Couldn't load ${esc(BOOK[p.book].name)}${info.online
+                ? ` in the ${esc(info.short)}, which is read from the internet. Check your connection, or switch to the BSB or KJV.`
+                : " — check your connection."}</p></section>`;
         }
     }));
-    return `<header class="reader-head"><h1>${esc(unit.label)}</h1>${switcher}</header>${sections.join("")}`;
+    const credit = info.online ? `<p class="credits muted small">${esc(info.credit ?? `${info.name}.`)} Read from the
+        <a href="https://bible.helloao.org" target="_blank" rel="noopener">Free Use Bible API</a>.</p>` : "";
+    return `<header class="reader-head"><h1>${esc(unit.label)}</h1>${switcher}</header>${sections.join("")}${credit}`;
 }
 
 async function catechismHtml(track, unit) {

@@ -1,8 +1,7 @@
 // Settings: Bible version, which days the family worships, theme, and backups.
 import { state, save, exportData, importData } from "../store.js";
 import { today } from "../dates.js";
-import { VERSIONS } from "../bible.js";
-import { app, $, esc, setTitle, toast, nextRender } from "../ui.js";
+import { app, $, setTitle, toast, nextRender, versionOptions, bibleVersion } from "../ui.js";
 import { applyTheme } from "../theme.js";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -14,9 +13,10 @@ export function renderSettings() {
     app().innerHTML = `
         <section class="card">
             <h2>Bible version</h2>
-            <div class="seg wide">
-                ${Object.entries(VERSIONS).map(([v, info]) => `<button data-version="${v}" class="${v === s.bibleVersion ? "on" : ""}">${esc(info.name)}</button>`).join("")}
-            </div>
+            <select id="version" class="version wide" aria-label="Bible version">${versionOptions(bibleVersion(), "name")}</select>
+            <p class="muted small">The BSB and KJV are kept in the app and work offline. The others are read
+               from the <a href="https://bible.helloao.org" target="_blank" rel="noopener">Free Use Bible API</a>
+               as you open each chapter, so they need the internet.</p>
         </section>
         <section class="card">
             <h2>Worship days</h2>
@@ -43,13 +43,13 @@ export function renderSettings() {
         </section>
         <section class="card about">
             <h2>About</h2>
-            <p class="small">Scripture: Berean Standard Bible (public domain) and King James Version.
+            <p class="small">Scripture: Berean Standard Bible (public domain) and King James Version; other translations from the Free Use Bible API.
                Catechisms from the Creeds.json project. Hymns from
                <a href="https://sots1689.github.io/lets-sing/" target="_blank" rel="noopener">Let's Sing</a>.
                M'Cheyne calendar via the M'Cheyne Plan app (Apache-2.0).</p>
         </section>`;
 
-    for (const b of app().querySelectorAll("[data-version]")) b.addEventListener("click", () => update(() => (s.bibleVersion = b.dataset.version)));
+    $("#version").addEventListener("change", (e) => update(() => (s.bibleVersion = e.target.value)));
     for (const b of app().querySelectorAll("[data-theme]")) b.addEventListener("click", () => update(() => {
         s.theme = b.dataset.theme;
         applyTheme();

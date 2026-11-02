@@ -40,9 +40,27 @@ function findBook(name) {
     return key.length >= 2 && matches.length === 1 ? matches[0] : null;
 }
 
+// The book codes most Bible software uses (USFM), where eBible.org's verse files differ
+const USFM = { SOL: "SNG", EZE: "EZK", JOE: "JOL", NAH: "NAM", MAR: "MRK", JOH: "JHN", PHI: "PHP", JAM: "JAS", "1JO": "1JN", "2JO": "2JN", "3JO": "3JN" };
+export const usfmCode = (code) => USFM[code] ?? code;
+
+// bsb and kjv are kept in the app and work offline. The others are read from the
+// Free Use Bible API (bible.helloao.org) as each chapter is opened, so they need
+// the internet; `online` is the API's id for the translation, `credit` the notice
+// its licence asks for.
 export const VERSIONS = {
     bsb: { name: "Berean Standard Bible", short: "BSB" },
     kjv: { name: "King James Version", short: "KJV" },
+    gnv: { name: "Geneva Bible (1599)", short: "Geneva", online: "eng_gnv" },
+    asv: { name: "American Standard Version (1901)", short: "ASV", online: "eng_asv" },
+    rv: { name: "Revised Version (1885)", short: "RV", online: "eng_rv5" },
+    ylt: { name: "Young's Literal Translation", short: "YLT", online: "eng_ylt" },
+    darby: { name: "Darby Translation", short: "Darby", online: "eng_dby" },
+    webster: { name: "Noah Webster Bible", short: "Webster", online: "eng_wbs" },
+    web: { name: "World English Bible", short: "WEB", online: "ENGWEBP" },
+    msb: { name: "Majority Standard Bible", short: "MSB", online: "eng_msb" },
+    lsv: { name: "Literal Standard Version", short: "LSV", online: "eng_lsv", credit: "Literal Standard Version, © 2020 Covenant Press. Creative Commons Attribution-ShareAlike 4.0." },
+    leb: { name: "Lexham English Bible", short: "LEB", online: "eng_leb", credit: "Lexham English Bible, © Logos Bible Software." },
 };
 
 // A passage: { book: code, chapter, from?, to? } -- from/to are verses; absent = whole chapter.

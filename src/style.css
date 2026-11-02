@@ -139,6 +139,8 @@ ul { padding: 0; margin: 0; }
 .reader h2 { margin-top: 1.25rem; }
 .reader sup { font-family: var(--sans); font-size: .65em; color: var(--muted); margin: 0 .15em 0 .3em; }
 .reader .seg { font-family: var(--sans); font-size: .9rem; }
+select.version { font: inherit; font-family: var(--sans); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .35rem .7rem; }
+select.version.wide { width: 100%; border-radius: 10px; margin-bottom: .5rem; }
 .qnum { font-family: var(--sans); color: var(--muted); margin: 0; }
 .question { font-size: 1.45rem; }
 .answer { font-size: 1.25rem; border-left: 4px solid var(--gold); padding-left: 1rem; }

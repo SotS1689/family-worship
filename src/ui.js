@@ -1,6 +1,7 @@
 // Small helpers the screens share.
 import { loadUnits } from "./content.js";
 import { SOURCES, KINDS } from "./catalog.js";
+import { VERSIONS } from "./bible.js";
 import { state } from "./store.js";
 import { worshipDaysPerWeek } from "./schedule.js";
 
@@ -60,6 +61,17 @@ export const trackName = (track) => track.section ? `${track.section.ref} by ${t
 export const kindIcon = (track) => KINDS[track.kind].icon;
 // What one step of the track is called: "chapter", "question"; a section of Scripture says
 export const unitWord = (track) => track.section?.step ?? sourceOf(track)?.unit ?? "unit";
+
+// The family's Bible version (the BSB if a saved one is no longer offered)
+export const bibleVersion = () => VERSIONS[state.settings.bibleVersion] ? state.settings.bibleVersion : "bsb";
+
+// <option>s for choosing a version, those kept in the app first; `label` is "name" or "short"
+export function versionOptions(current, label) {
+    const option = ([v, info]) => `<option value="${v}" ${v === current ? "selected" : ""}>${esc(label === "short" ? info.short : info.name)}</option>`;
+    const all = Object.entries(VERSIONS);
+    return `<optgroup label="On this device">${all.filter(([, i]) => !i.online).map(option).join("")}</optgroup>
+        <optgroup label="Online (needs internet)">${all.filter(([, i]) => i.online).map(option).join("")}</optgroup>`;
+}
 
 export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 

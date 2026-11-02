@@ -3,7 +3,7 @@
 //
 // {
 //   version: 1,
-//   settings: { bibleVersion: "bsb" | "kjv", worshipDays: [Sun..Sat booleans], theme: "auto" | "light" | "dark" },
+//   settings: { bibleVersion: a key of VERSIONS in bible.js ("bsb", "kjv", "gnv"...), worshipDays: [Sun..Sat booleans], theme: "auto" | "light" | "dark" },
 //   tracks: [{ id, kind, source, pace, start, position, credit, laps, paused, hymns?, section? }],
 //            (hymns: the hymn ids a hymn track goes through; position counts within them)
 //            (section: for the "section" Bible source, { ref: "Matthew 5-7", step: "verse" | "paragraph" | "chapter" })

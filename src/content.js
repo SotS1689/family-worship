@@ -3,7 +3,7 @@
 //   bible     { passages: [{ book, chapter, from?, to? }], label }
 //   catechism { n, q, a, proofs, label }
 //   hymns     { id, title, tune, composer, verses, credits, label }
-import { BOOKS, BOOK, parseReference, passagesLabel } from "./bible.js";
+import { BOOKS, BOOK, VERSIONS, usfmCode, parseReference, passagesLabel } from "./bible.js";
 
 const cache = new Map();
 const json = (path) => {
@@ -87,6 +87,29 @@ export async function loadUnits(kind, source, section) {
 
 // One book of a Bible version: chapters[chapter - 1] = [[verse, text], ...]
 export const loadBook = (version, code) => json(`bible/${version}/${code}.json`);
+
+// One chapter of a version, [[verse, text], ...]: from the app's copy, or for an
+// online version from the Free Use Bible API (footnote marks and line breaks left out)
+const API = "https://bible.helloao.org/api";
+const chapters = new Map();
+export async function loadChapter(version, code, chapter) {
+    const online = VERSIONS[version]?.online;
+    if (!online) return (await loadBook(version, code))[chapter - 1];
+    const url = `${API}/${online}/${usfmCode(code)}/${chapter}.json`;
+    if (!chapters.has(url)) {
+        chapters.set(url, fetch(url).then((r) => {
+            if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+            return r.json();
+        }).then((data) => data.chapter.content.filter((c) => c.type === "verse").map((v) => [
+            v.number,
+            v.content.map((part) => typeof part === "string" ? part : part.text ?? "").filter(Boolean).join(" ").replace(/\s+/g, " ").trim(),
+        ])).catch((e) => {
+            chapters.delete(url);
+            throw e;
+        }));
+    }
+    return chapters.get(url);
+}
 
 // Optional sung settings of catechism questions:
 // public/data/catechism-songs.json = { "<catechism id>": { "<question number>": { "title", "url" } } }
