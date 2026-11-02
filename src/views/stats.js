@@ -3,7 +3,7 @@ import { state, save } from "../store.js";
 import { today, addDays, formatDay, weekStart } from "../dates.js";
 import { projectedFinish } from "../schedule.js";
 import { currentStreak, longestStreak, faithfulness, weeklyCounts, totals, nextMilestone, MILESTONES, firstDay } from "../stats.js";
-import { app, esc, setTitle, totalsFor, trackName, kindIcon, sourceOf, plural, nextRender, isCurrent } from "../ui.js";
+import { app, esc, setTitle, totalsFor, trackName, kindIcon, unitWord, plural, nextRender, isCurrent } from "../ui.js";
 
 const CALENDAR_WEEKS = 18;
 const pct = (x) => (x == null ? "—" : `${Math.round(x * 100)}%`);
@@ -60,7 +60,7 @@ export async function renderStats() {
                     const total = unitTotals[t.id];
                     if (!total) return "";
                     const finish = !t.paused && projectedFinish(t, total, day, worshipDays);
-                    const unit = sourceOf(t)?.unit ?? "unit";
+                    const unit = unitWord(t);
                     return `<li>
                         <p><span class="icon">${kindIcon(t)}</span> ${esc(trackName(t))}</p>
                         <div class="bar"><span style="width:${(100 * t.position) / total}%"></span></div>

@@ -42,6 +42,7 @@ for (const dir of ["bible/bsb", "bible/kjv", "catechisms", "plans"]) mkdirSync(`
 // ---- Bibles ----
 // The KJV marks words the translators supplied in [brackets]; the app shows them in italics.
 const BIBLES = { bsb: "engbsb", kjv: "eng-kjv2006" };
+const lastVerse = {}; // code -> [last verse of each chapter in either version]
 for (const [version, id] of Object.entries(BIBLES)) {
     console.log(`Bible: ${version}`);
     const zip = unzipSync(new Uint8Array(await download(`https://ebible.org/Scriptures/${id}_vpl.zip`, `${id}_vpl.zip`)));
@@ -57,9 +58,52 @@ for (const [version, id] of Object.entries(BIBLES)) {
         const chapters = books[b.code];
         if (!chapters || chapters.length !== b.chapters) throw new Error(`${version} ${b.code}: ${chapters?.length} chapters, expected ${b.chapters}`);
         writeFileSync(`${OUT}/bible/${version}/${b.code}.json`, JSON.stringify(chapters));
+        lastVerse[b.code] = chapters.map((vs, i) => Math.max(lastVerse[b.code]?.[i] ?? 0, ...vs.map(([v]) => v)));
     }
     console.log(`  wrote bible/${version}/*.json (66 books)`);
 }
+
+// ---- Paragraphs ----
+// Where the BSB starts a new paragraph (or stanza, in poetry): after a blank line
+// (\b), a section heading, a Psalm title or the start of a chapter. A break in the
+// middle of a verse is left out, so every paragraph is whole verses.
+// -> paragraphs.json  { BOOK: [[last verse, first verse of each paragraph after the first...] per chapter] }
+console.log("Paragraphs: BSB");
+const usfm = unzipSync(new Uint8Array(await download("https://ebible.org/Scriptures/engbsb_usfm.zip", "engbsb_usfm.zip")));
+const BREAKS = new Set(["c", "b", "s1", "s2", "d", "ms1", "qa"]);
+const HEADINGS = new Set(["s1", "s2", "d", "ms1", "mr", "r", "qa", "mt1", "h", "toc1", "toc2", "id"]);
+// The USFM files use the standard book codes; the eBible.org verse files (and so the app) differ for these
+const USFM_CODES = { SNG: "SOL", EZK: "EZE", JOL: "JOE", NAM: "NAH", MRK: "MAR", JHN: "JOH", PHP: "PHI", JAS: "JAM", "1JN": "1JO", "2JN": "2JO", "3JN": "3JO" };
+const paragraphs = {};
+for (const [file, bytes] of Object.entries(usfm)) {
+    const usfmCode = file.match(/^\d+-(\w{3})engbsb\.usfm$/)?.[1];
+    const code = USFM_CODES[usfmCode] ?? usfmCode;
+    if (!BOOK[code]) continue;
+    const starts = Array.from({ length: BOOK[code].chapters }, () => []);
+    let chapter = 0, pending = false, heading = false;
+    // Each marker and the text after it, up to the next one
+    for (const [, marker, rest] of strFromU8(bytes).matchAll(/\\(\+?\w+\*?)([^\\]*)/g)) {
+        if (marker === "c") chapter = parseInt(rest);
+        if (BREAKS.has(marker)) pending = true;
+        if (marker === "c") continue;
+        if (marker === "v") {
+            const v = parseInt(rest);
+            if (pending && v > 1) starts[chapter - 1].push(v);
+            pending = heading = false;
+            continue;
+        }
+        if (HEADINGS.has(marker)) {
+            heading = true;
+            continue;
+        }
+        if (/^(m|p|pi\d?|q\d|li\d|pmo|qr|pc)$/.test(marker)) heading = false;
+        // Words before the next verse number: the break was mid-verse
+        if (pending && !heading && rest.trim()) pending = false;
+    }
+    paragraphs[code] = lastVerse[code].map((last, i) => [last, ...starts[i]]);
+}
+if (Object.keys(paragraphs).length !== 66) throw new Error(`Paragraphs: ${Object.keys(paragraphs).length} books, expected 66`);
+write("paragraphs.json", paragraphs);
 
 // ---- Catechisms ----
 const CREEDS = "https://raw.githubusercontent.com/NonlinearFruit/Creeds.json/master/creeds";

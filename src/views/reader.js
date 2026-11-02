@@ -51,6 +51,8 @@ async function bibleHtml(unit) {
         try {
             const book = await loadBook(version, p.book);
             const verses = book[p.chapter - 1].filter(([v]) => (p.from == null || v >= p.from) && (p.to == null || v <= p.to));
+            // A verse the BSB leaves out of its text (Matthew 18:11) but the KJV has
+            if (!verses.length) return `<section><p class="muted">${esc(passageLabel(p))} isn't in the ${VERSIONS[version].short}'s text. Switch versions to read it.</p></section>`;
             return `<section>${several ? `<h2>${esc(passageLabel(p))}</h2>` : ""}<p class="verses">${verses.map(([v, t]) => `<sup>${v}</sup>${verseText(t)}`).join(" ")}</p></section>`;
         } catch {
             return `<section><h2>${esc(passageLabel(p))}</h2><p class="muted">Couldn't load ${esc(BOOK[p.book].name)} — check your connection.</p></section>`;

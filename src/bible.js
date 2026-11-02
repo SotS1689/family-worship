@@ -47,16 +47,33 @@ export const VERSIONS = {
 
 // A passage: { book: code, chapter, from?, to? } -- from/to are verses; absent = whole chapter.
 
-// "Genesis 9-10", "Psalm 119:1-24", "2 Samuel 5:1-10; 1 Chronicles 11-12", "Psalm 46, 80, 135"
+// "Genesis 9-10", "Psalm 119:1-24", "2 Samuel 5:1-10; 1 Chronicles 11-12", "Psalm 46, 80, 135",
+// "Romans", "Genesis-Deuteronomy", "Genesis 37 - Exodus 2"
 // -> one passage per chapter (or chapter part).
 export function parseReference(text) {
     const passages = [];
     let book = null;
+    const chaptersOf = (b, from = 1, to = b.chapters) => {
+        if (from < 1 || to > b.chapters || from > to) throw new Error(`${b.name} has ${b.chapters} chapter${b.chapters === 1 ? "" : "s"}`);
+        for (let c = from; c <= to; c++) passages.push({ book: b.code, chapter: c });
+    };
     for (const part of text.split(/[;,]/).map((s) => s.trim()).filter(Boolean)) {
         const whole = findBook(part);
-        if (whole?.chapters === 1) { // "Obadiah", "Jude"
+        if (whole) { // "Obadiah", "Romans"
             book = whole;
-            passages.push({ book: book.code, chapter: 1 });
+            chaptersOf(book);
+            continue;
+        }
+        // From one book (and chapter) to another
+        const span = part.match(/^(.*?\D)\s*(\d+)?\s*[-–—]\s*(.*?\D)\s*(\d+)?$/);
+        const [first, last] = span ? [findBook(span[1].trim()), findBook(span[3].trim())] : [];
+        if (first && last && first !== last) {
+            if (last.index < first.index) throw new Error(`${last.name} comes before ${first.name}`);
+            for (let i = first.index; i <= last.index; i++) {
+                const b = BOOKS[i];
+                chaptersOf(b, i === first.index && span[2] ? +span[2] : 1, i === last.index && span[4] ? +span[4] : b.chapters);
+            }
+            book = last;
             continue;
         }
         const m = part.match(/^(.*?)\s*(\d+)(?::(\d+))?(?:\s*[-–]\s*(\d+)(?::(\d+))?)?$/);
@@ -68,7 +85,10 @@ export function parseReference(text) {
         }
         if (!book) throw new Error(`No book given in "${text}"`);
         const ch = +c1;
-        if (v1 && x2 && v2) {
+        if (book.chapters === 1 && !v1 && (x2 || ch > 1)) {
+            // "Jude 3-4", "Philemon 4": verses ("Jude 1" stays the whole book, as the plans use it)
+            passages.push({ book: book.code, chapter: 1, from: ch, to: x2 ? +x2 : ch });
+        } else if (v1 && x2 && v2) {
             // Psalm 18:1-19:6 style: across a chapter break
             passages.push({ book: book.code, chapter: ch, from: +v1 });
             for (let c = ch + 1; c < +x2; c++) passages.push({ book: book.code, chapter: c });

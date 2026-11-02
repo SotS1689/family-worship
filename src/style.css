@@ -167,7 +167,7 @@ ul { padding: 0; margin: 0; }
 .plan-form > fieldset > select { width: 100%; margin-top: .6rem; }
 .plan-form input[type=number] { width: 4.5rem; }
 .radio { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; margin: .5rem 0; }
-.plan-form input[type=search] {
+.plan-form input[type=search], .plan-form input[type=text] {
     width: 100%; font: inherit; color: var(--ink); background: var(--card);
     border: 1px solid var(--line); border-radius: 10px; padding: .5rem .7rem;
 }
@@ -183,6 +183,7 @@ ul { padding: 0; margin: 0; }
 .pick-list li.muted { padding: .6rem .75rem; }
 .hint { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .8rem; }
 .hint:empty { display: none; }
+.error { color: #B3261E; }
 .danger-zone { border-top: 1px solid var(--line); padding-top: 1rem; }
 fieldset[disabled] .seg { opacity: .7; }
 

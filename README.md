@@ -52,7 +52,7 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 
 | What | Source | Licence |
 |---|---|---|
-| Berean Standard Bible | [eBible.org `engbsb`](https://ebible.org/details.php?id=engbsb) | Public domain |
+| Berean Standard Bible (text, and its paragraph breaks from the USFM edition) | [eBible.org `engbsb`](https://ebible.org/details.php?id=engbsb) | Public domain |
 | King James Version | [eBible.org `eng-kjv2006`](https://ebible.org/details.php?id=eng-kjv2006) | Public domain (outside the UK) |
 | Westminster Shorter, 1695 Baptist and Heidelberg catechisms | [Creeds.json](https://github.com/NonlinearFruit/Creeds.json) | Public-domain texts |
 | An Orthodox Catechism (Hercules Collins, 1680) | The pastor's Word document `The Orthodox Catechism.docx`, imported by `scripts/import_collins.py` | Public-domain text |

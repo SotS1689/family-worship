@@ -14,6 +14,11 @@ export const SOURCES = {
             about: "Genesis to Revelation in order, one chapter at a time.",
             unit: "chapter",
         },
+        section: {
+            name: "A part of the Bible you choose",
+            about: "A book, several books, or a few chapters, read a verse, a paragraph or a chapter at a time. Paragraphs follow the Berean Standard Bible's (stanzas, in the Psalms).",
+            unit: "chapter", // or verse/paragraph: the track's section.step
+        },
         "mcheyne-family": {
             name: "M'Cheyne — family readings",
             about: "The two daily readings M'Cheyne set for family worship: Genesis–2 Chronicles and the whole New Testament in a year.",

@@ -23,11 +23,11 @@ export function setTitle(title) {
     document.title = title === "Family Worship" ? title : `${title} · Family Worship`;
 }
 
-// Every unit of a source, worked out once per source
+// Every unit of a source (and, for a section of Scripture, of that section), worked out once
 const units = new Map();
-export function sourceUnits(kind, source) {
-    const key = `${kind}/${source}`;
-    if (!units.has(key)) units.set(key, loadUnits(kind, source).catch((e) => {
+export function sourceUnits(kind, source, section) {
+    const key = `${kind}/${source}${section ? `/${section.step}/${section.ref}` : ""}`;
+    if (!units.has(key)) units.set(key, loadUnits(kind, source, section).catch((e) => {
         units.delete(key);
         throw e;
     }));
@@ -37,7 +37,7 @@ export function sourceUnits(kind, source) {
 // A track's units: its whole source, or for hymns only the ones the family chose
 // (track.hymns, a list of hymn ids), kept in Let's Sing's order
 export async function unitsOf(track) {
-    const all = await sourceUnits(track.kind, track.source);
+    const all = await sourceUnits(track.kind, track.source, track.section);
     if (track.kind !== "hymns" || !track.hymns) return all;
     const chosen = new Set(track.hymns);
     return all.filter((u) => chosen.has(u.id));
@@ -56,13 +56,15 @@ export async function totalsFor(tracks) {
 }
 
 export const sourceOf = (track) => SOURCES[track.kind][track.source];
-export const trackName = (track) => sourceOf(track)?.name ?? track.source;
+export const trackName = (track) => track.section ? `${track.section.ref} by ${track.section.step}` : sourceOf(track)?.name ?? track.source;
 export const kindIcon = (track) => KINDS[track.kind].icon;
+// What one step of the track is called: "chapter", "question"; a section of Scripture says
+export const unitWord = (track) => track.section?.step ?? sourceOf(track)?.unit ?? "unit";
 
 export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function paceText(track) {
-    const unit = sourceOf(track)?.unit ?? "unit";
+    const unit = unitWord(track);
     const { pace } = track;
     if (pace.mode === "goal") {
         const months = Math.round(pace.days / 30.4);
