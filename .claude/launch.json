@@ -33,6 +33,18 @@
         "--strictPort"
       ],
       "port": 4174
+    },
+    {
+      "name": "home-page",
+      "runtimeExecutable": "C:/Users/11tdr/AppData/Local/Programs/Python/Python313/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8010",
+        "--directory",
+        "C:/Users/11tdr/Code/SotS1689.github.io"
+      ],
+      "port": 8010
     }
   ]
 }

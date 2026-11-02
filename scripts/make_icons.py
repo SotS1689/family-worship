@@ -8,22 +8,32 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 OUT = Path(__file__).resolve().parent.parent / "public" / "icons"
-BROWN = (91, 58, 41)
-PAPER = (250, 247, 242)
-GOLD = (200, 144, 46)
+GREEN = (28, 107, 78)
+BLUE = (29, 95, 148)
+PAPER = (242, 247, 245)
+GOLD = (227, 178, 60)
 
 
 def draw(size, maskable=False):
     s = 4  # draw large, then shrink for smooth edges
     n = size * s
     img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
+    # Green-to-blue diagonal background, clipped to the icon's shape
+    bg = Image.new("RGBA", (n, n))
+    px = bg.load()
+    for y in range(n):
+        for x in range(n):
+            t = (x + y) / (2 * n - 2)
+            px[x, y] = tuple(round(g + (b - g) * t) for g, b in zip(GREEN, BLUE)) + (255,)
+    mask = Image.new("L", (n, n), 0)
     if maskable:
-        d.rectangle([0, 0, n, n], fill=BROWN)
+        mask.paste(255, [0, 0, n, n])
         k = 0.8  # keep the drawing inside the maskable safe zone
     else:
-        d.rounded_rectangle([0, 0, n - 1, n - 1], radius=n * 0.22, fill=BROWN)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, n - 1, n - 1], radius=n * 0.22, fill=255)
         k = 1.0
+    img.paste(bg, (0, 0), mask)
+    d = ImageDraw.Draw(img)
 
     def p(x, y):  # 0..100 design units, centred
         return (n / 2 + (x - 50) * n / 100 * k, n / 2 + (y - 50) * n / 100 * k)

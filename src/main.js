@@ -6,6 +6,7 @@
 //   #/settings
 import "./style.css";
 import { applyTheme } from "./theme.js";
+import { setUpSupport } from "./support.js";
 import { renderToday } from "./views/today.js";
 import { renderReader } from "./views/reader.js";
 import { renderPlans, renderPlanForm } from "./views/plans.js";
@@ -43,6 +44,7 @@ $("#back").addEventListener("click", () => (history.length > 1 ? history.back() 
 addEventListener("hashchange", route);
 applyTheme();
 route();
+setUpSupport();
 
 // A day can roll over while the app sits open: show the new day when it comes back
 let shownDay = new Date().toDateString();
