@@ -16,7 +16,7 @@ export async function renderToday() {
         app().innerHTML = `
             <section class="welcome card">
                 <h2>Welcome</h2>
-                <p>Choose what your family will go through together: a Bible reading plan, a catechism, and hymns.
+                <p>Choose what your family will go through together: a Bible reading plan, a catechism, a way to pray, and hymns.
                    Set a goal or a pace for each, then tap the check mark each day you worship together.</p>
                 <a class="btn primary" href="#/plans/new">Set up family worship</a>
             </section>`;
@@ -87,6 +87,14 @@ function itemHtml({ track, units, from, count, review, finished, skipped, error 
     if (error) return `<li class="card">${head}<p class="muted">Couldn't load this — check your connection.</p></li>`;
     if (finished) return `<li class="card">${head}<p>🎉 Finished! <a href="#/plans/${track.id}">Start again or choose another</a>.</p></li>`;
     if (skipped) return `<li class="card">${head}<p class="muted">Nothing recorded today.</p></li>`;
+    if (track.kind === "prayer") {
+        const unit = units[from % units.length];
+        if (unit.passages) return `<li class="card">${head}<div class="units"><a class="unit" href="#/read/${track.id}/${from % units.length}">${
+            esc(`Pray: ${unit.label}`)}</a></div></li>`;
+        const about = unit.parts.length > 1 ? unit.parts.map((p) => p.title).filter(Boolean).join(" · ") : unit.parts[0].prompt;
+        return `<li class="card">${head}<div class="units"><a class="unit" href="#/read/${track.id}/${from % units.length}">${
+            esc(unit.parts.length > 1 ? "Pray together" : `Pray: ${unit.label}`)}</a></div>${about ? `<p class="preview">${esc(about)}</p>` : ""}</li>`;
+    }
     const links = [];
     for (let i = from; i < from + count; i++) links.push(`<a class="unit" href="#/read/${track.id}/${i}">${esc(units[i].label)}</a>`);
     if (review != null) links.push(`<a class="unit review" href="#/read/${track.id}/${review}">Review: ${esc(units[review].label)}</a>`);

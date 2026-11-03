@@ -4,6 +4,7 @@ import { today, formatDay } from "../dates.js";
 import { unitsPerDay, projectedFinish } from "../schedule.js";
 import { KINDS, SOURCES, GOALS } from "../catalog.js";
 import { offlineStatus, saveOffline } from "../letsSing.js";
+import { PRAYER_PLANS, blankPart } from "../prayer.js";
 import { app, $, esc, setTitle, unitsOf, sourceUnits, totalsFor, trackName, kindIcon, paceText, rateText, unitWord, plural, nextRender, isCurrent, toast } from "../ui.js";
 
 export async function renderPlans() {
@@ -16,6 +17,13 @@ export async function renderPlans() {
         <ul class="tracks">
             ${state.tracks.map((t) => {
                 const total = totals[t.id];
+                if (t.kind === "prayer") return `<li class="card">
+                    <a class="track-link" href="#/plans/${t.id}">
+                        <span class="icon">${kindIcon(t)}</span>
+                        <span class="track-name">${esc(trackName(t))}</span>
+                        <span class="muted small">${t.paused ? "Paused" : esc(paceText(t))}</span>
+                    </a>
+                </li>`;
                 const pct = total ? Math.round((100 * t.position) / total) : 0;
                 const finish = total && !t.paused ? projectedFinish(t, total, day, state.settings.worshipDays) : null;
                 return `<li class="card">
@@ -39,6 +47,7 @@ export async function renderPlans() {
 const DEFAULT_PACE = {
     bible: { mode: "goal", days: 365 },
     catechism: { mode: "rate", count: 1, per: "week" },
+    prayer: { mode: "rate", count: 1, per: "day" }, // fixed: a prayer plan comes up every worship day
     hymns: { mode: "rate", count: 2, per: "week" },
 };
 // A part of the Bible may be short, so it starts at one step a day rather than a goal
@@ -103,7 +112,26 @@ export async function renderPlanForm(trackId) {
                     <button type="button" class="btn small" id="offline-save" hidden></button>
                 </details>
             </fieldset>
-            <fieldset>
+            <fieldset id="prayer-own" hidden>
+                <legend>Your plan</legend>
+                <input type="text" id="prayer-name" placeholder="Name it, e.g. Evening prayer" aria-label="Name of your prayer plan" autocomplete="off">
+                <p class="small">The parts, in the order you'll pray them:</p>
+                <ol class="prayer-parts" id="prayer-parts"></ol>
+                <div class="pick-bar">
+                    <button type="button" class="btn small" id="part-add">＋ Add a part</button>
+                </div>
+                <p class="muted small">Or start from a suggestion and change it:
+                    ${Object.entries(PRAYER_PLANS).map(([k, p]) => `<button type="button" class="btn small" data-copy="${k}">${esc(p.name)}</button>`).join(" ")}</p>
+            </fieldset>
+            <fieldset id="prayer-pick" hidden>
+                <legend>Pray through</legend>
+                <div class="seg wide" id="each">
+                    <button type="button" data-each="all">The whole plan each day</button>
+                    <button type="button" data-each="part">One part a day, in turn</button>
+                </div>
+                <p class="muted small">It comes up every worship day and starts again from the top when it reaches the end.</p>
+            </fieldset>
+            <fieldset id="pace-pick">
                 <legend>How fast</legend>
                 <label class="radio"><input type="radio" name="mode" value="goal"> Finish in
                     <select id="goal">${GOALS.map((g) => `<option value="${g.days}">${g.label}</option>`).join("")}</select>
@@ -115,7 +143,7 @@ export async function renderPlanForm(trackId) {
                 </label>
                 <p class="hint" id="preview"></p>
             </fieldset>
-            <fieldset>
+            <fieldset id="position-pick">
                 <legend>${editing ? "Where you are" : "Start at"}</legend>
                 <select id="position" aria-label="Next to read"></select>
                 <p class="muted small">${editing ? "The next one due. Change it to skip ahead or go back." : "Already partway through? Pick where to begin."}</p>
@@ -143,6 +171,22 @@ export async function renderPlanForm(trackId) {
         $("#about").textContent = src.about ?? "";
         $("#hymn-pick").hidden = draft.kind !== "hymns";
         $("#section-pick").hidden = draft.source !== "section";
+        const prayer = draft.kind === "prayer";
+        // Praying the Psalms is a psalm a day, from wherever the family starts
+        const psalms = prayer && draft.source === "psalms";
+        $("#prayer-pick").hidden = !prayer || psalms;
+        $("#prayer-own").hidden = !prayer || draft.source !== "custom";
+        $("#pace-pick").hidden = prayer;
+        $("#position-pick").hidden = prayer && !psalms;
+        if (prayer) {
+            draft.each ??= "all";
+            refreshEach();
+            if (draft.source === "custom") {
+                draft.parts ??= [blankPart()];
+                $("#prayer-name").value = draft.name ?? "";
+                refreshParts();
+            }
+        }
         if (draft.source === "section") {
             draft.section ??= { ref: "", step: "paragraph" };
             $("#section-ref").value = draft.section.ref;
@@ -202,6 +246,67 @@ export async function renderPlanForm(trackId) {
             draft.section = { ...draft.section, step: b.dataset.step };
             draft.position = 0;
             refreshSteps();
+            refreshUnits();
+        });
+    }
+
+    // ---- Prayer ----
+    function refreshEach() {
+        for (const b of form.querySelectorAll("[data-each]")) b.classList.toggle("on", b.dataset.each === draft.each);
+    }
+    for (const b of form.querySelectorAll("[data-each]")) {
+        b.addEventListener("click", () => {
+            draft.each = b.dataset.each;
+            draft.position = 0;
+            refreshEach();
+            refreshUnits();
+        });
+    }
+    function refreshParts() {
+        const n = draft.parts.length;
+        $("#prayer-parts").innerHTML = draft.parts.map((p, i) => `
+            <li class="prayer-part" data-i="${i}">
+                <input type="text" data-field="title" value="${esc(p.title)}" placeholder="Part ${i + 1}, e.g. Missionaries" aria-label="Name of part ${i + 1}" autocomplete="off">
+                ${p.line ? `<p class="muted small">Said together: “${esc(p.line)}”</p>` : ""}
+                <textarea data-field="prompt" rows="2" placeholder="What to pray about" aria-label="What to pray about in part ${i + 1}">${esc(p.prompt)}</textarea>
+                <div class="part-tools">
+                    <button type="button" class="btn small" data-move="-1" ${i === 0 ? "disabled" : ""} aria-label="Move part ${i + 1} up">↑</button>
+                    <button type="button" class="btn small" data-move="1" ${i === n - 1 ? "disabled" : ""} aria-label="Move part ${i + 1} down">↓</button>
+                    <button type="button" class="btn small danger" data-remove ${n === 1 ? "disabled" : ""} aria-label="Remove part ${i + 1}">Remove</button>
+                </div>
+            </li>`).join("");
+    }
+    $("#prayer-name").addEventListener("input", (e) => (draft.name = e.target.value));
+    $("#prayer-parts").addEventListener("input", (e) => {
+        const i = +e.target.closest("[data-i]").dataset.i;
+        draft.parts[i] = { ...draft.parts[i], [e.target.dataset.field]: e.target.value };
+        clearTimeout(typing);
+        typing = setTimeout(refreshUnits, 300);
+    });
+    $("#prayer-parts").addEventListener("click", (e) => {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+        const i = +btn.closest("[data-i]").dataset.i;
+        if (btn.dataset.move) {
+            const j = i + +btn.dataset.move;
+            [draft.parts[i], draft.parts[j]] = [draft.parts[j], draft.parts[i]];
+        } else if (btn.hasAttribute("data-remove")) draft.parts.splice(i, 1);
+        refreshParts();
+        refreshUnits();
+    });
+    $("#part-add").addEventListener("click", () => {
+        draft.parts.push(blankPart());
+        refreshParts();
+        $("#prayer-parts").lastElementChild.querySelector("input").focus();
+    });
+    for (const b of form.querySelectorAll("[data-copy]")) {
+        b.addEventListener("click", () => {
+            const plan = PRAYER_PLANS[b.dataset.copy];
+            const blank = draft.parts.every((p) => !p.title && !p.prompt);
+            if (!blank && !confirm(`Replace your parts with ${plan.name}?`)) return;
+            draft.parts = structuredClone(plan.parts);
+            if (!draft.name) $("#prayer-name").value = draft.name = plan.name;
+            refreshParts();
             refreshUnits();
         });
     }
@@ -440,12 +545,24 @@ export async function renderPlanForm(trackId) {
             $("#section-ref").focus();
             return toast("Type which part of the Bible to read.");
         }
+        if (draft.kind === "prayer" && draft.source === "custom") {
+            draft.name = draft.name?.trim();
+            draft.parts = draft.parts.filter((p) => p.title.trim() || p.prompt.trim() || p.line);
+            if (!draft.parts.length) {
+                draft.parts = [blankPart()];
+                refreshParts();
+                $("#prayer-parts input").focus();
+                return toast("Add at least one part to pray.");
+            }
+        }
         if (editing) {
             // A new goal counts from today, so the pace is worked out from what's left
             if (draft.pace.mode === "goal" && JSON.stringify(draft.pace) !== JSON.stringify(editing.pace)) editing.start = today();
             if (draft.position !== editing.position) editing.credit = 0;
             Object.assign(editing, { pace: draft.pace, position: draft.position });
             if (draft.kind === "hymns") editing.hymns = draft.hymns;
+            if (draft.kind === "prayer") Object.assign(editing, draft.source === "custom"
+                ? { each: draft.each, name: draft.name, parts: draft.parts } : { each: draft.each });
             save();
         } else {
             newTrack(draft);

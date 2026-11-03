@@ -4,6 +4,7 @@
 export const KINDS = {
     bible: { name: "Bible reading", icon: "📖" },
     catechism: { name: "Catechism", icon: "❓" },
+    prayer: { name: "Prayer", icon: "🙏" },
     hymns: { name: "Hymns", icon: "🎵" },
 };
 
@@ -61,6 +62,29 @@ export const SOURCES = {
             short: "Orthodox Catechism",
             about: "Hercules Collins' Particular Baptist revision of the Heidelberg Catechism, with his questions on baptism. 150 questions.",
             unit: "question",
+        },
+    },
+    // The plans themselves are in prayer.js
+    prayer: {
+        acts: {
+            name: "A.C.T.S.",
+            about: "Adoration, Confession, Thanksgiving, Supplication: praise God for who he is, confess sin, thank him for what he has done, then ask for what we and others need.",
+            unit: "prayer",
+        },
+        "lords-prayer": {
+            name: "The Lord's Prayer",
+            about: "Pray through the prayer Jesus taught (Matthew 6:9–13) a petition at a time, with what each one asks for.",
+            unit: "prayer",
+        },
+        psalms: {
+            name: "Praying the Psalms",
+            about: "A psalm a day, read aloud and then prayed back to God. Psalm 119 is taken a stanza at a time, by the 22 letters of the Hebrew alphabet, so the Psalter goes round about every 171 days.",
+            unit: "psalm",
+        },
+        custom: {
+            name: "Your own prayer plan",
+            about: "Make your own order of prayer: name each part and say what to pray about, such as missionaries, your church, or family needs.",
+            unit: "prayer",
         },
     },
     hymns: {

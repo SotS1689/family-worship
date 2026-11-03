@@ -25,9 +25,12 @@ export async function renderReader(trackId, index) {
     let body;
     if (track.kind === "bible") body = await bibleHtml(unit);
     else if (track.kind === "catechism") body = await catechismHtml(track, unit);
+    // A psalm to pray: the guide, then the psalm as a Bible reading
+    else if (track.kind === "prayer" && unit.passages) body = `<p class="hint guide">${esc(unit.guide)}</p>${await bibleHtml(unit)}`;
+    else if (track.kind === "prayer") body = prayerHtml(unit);
     else body = hymnHtml(unit);
     if (!isCurrent(ticket)) return;
-    app().innerHTML = `<article class="reader ${track.kind}">${body}</article>${nav}`;
+    app().innerHTML = `<article class="reader ${track.kind}">${body}</article>${units.length > 1 ? nav : ""}`;
     if (track.kind === "hymns") startPlayer(unit);
 
     app().querySelector("#version")?.addEventListener("change", (e) => {
@@ -83,6 +86,22 @@ async function catechismHtml(track, unit) {
             </figure>`
         : song ? `<a class="btn primary" href="${esc(song.url)}" target="_blank" rel="noopener">♪ Listen: ${esc(song.title || "sung version")}</a>` : ""}
         ${unit.proofs?.length ? `<details><summary>Scripture proofs</summary><p>${unit.proofs.map(esc).join("; ")}</p></details>` : ""}`;
+}
+
+// A prayer plan, or one part of it: what to say together and what to pray about
+function prayerHtml(unit) {
+    const several = unit.parts.length > 1;
+    return `
+        <h1>${esc(unit.label)}</h1>
+        <ol class="prayer-steps">${unit.parts.map((p) => `
+            <li>
+                ${several && p.title ? `<h2>${esc(p.title)}</h2>` : ""}
+                ${p.line ? `<p class="said">${esc(p.line)}</p>` : ""}
+                ${p.prompt ? `<p>${esc(p.prompt)}</p>` : ""}
+                ${p.refs?.length ? `<p class="muted small refs">${p.refs.map(esc).join("; ")}</p>` : ""}
+            </li>`).join("")}
+        </ol>
+        ${unit.credit ? `<p class="credits muted small">${esc(unit.credit)}</p>` : ""}`;
 }
 
 // Let's Sing's page for the hymn: its title, player, music and the words, which

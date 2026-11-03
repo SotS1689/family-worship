@@ -4,6 +4,7 @@ import { SOURCES, KINDS } from "./catalog.js";
 import { VERSIONS } from "./bible.js";
 import { state } from "./store.js";
 import { worshipDaysPerWeek } from "./schedule.js";
+import { prayerUnits, prayerPlanOf } from "./prayer.js";
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -38,6 +39,7 @@ export function sourceUnits(kind, source, section) {
 // A track's units: its whole source, or for hymns only the ones the family chose
 // (track.hymns, a list of hymn ids), kept in Let's Sing's order
 export async function unitsOf(track) {
+    if (track.kind === "prayer") return prayerUnits(track);
     const all = await sourceUnits(track.kind, track.source, track.section);
     if (track.kind !== "hymns" || !track.hymns) return all;
     const chosen = new Set(track.hymns);
@@ -57,7 +59,8 @@ export async function totalsFor(tracks) {
 }
 
 export const sourceOf = (track) => SOURCES[track.kind][track.source];
-export const trackName = (track) => track.section ? `${track.section.ref} by ${track.section.step}` : sourceOf(track)?.name ?? track.source;
+export const trackName = (track) => track.section ? `${track.section.ref} by ${track.section.step}`
+    : track.kind === "prayer" ? prayerPlanOf(track).name : sourceOf(track)?.name ?? track.source;
 export const kindIcon = (track) => KINDS[track.kind].icon;
 // What one step of the track is called: "chapter", "question"; a section of Scripture says
 export const unitWord = (track) => track.section?.step ?? sourceOf(track)?.unit ?? "unit";
@@ -77,6 +80,8 @@ export const isOnline = (info) => !!(info.online || info.esv);
 export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function paceText(track) {
+    if (track.source === "psalms") return "A psalm each worship day";
+    if (track.kind === "prayer") return track.each === "part" ? "One part each worship day, in turn" : "The whole plan each worship day";
     const unit = unitWord(track);
     const { pace } = track;
     if (pace.mode === "goal") {

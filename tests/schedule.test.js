@@ -91,3 +91,30 @@ test("plan references parse", () => {
     assert.equal(passagesLabel(parseReference("Obadiah; Psalm 82-83")), "Obadiah; Psalm 82–83");
     assert.equal(parseReference("2 Sam10")[0].book, "2SA");
 });
+
+test("a prayer plan asks for one unit every day and goes round, never finishing", () => {
+    const s = stateWith(track({ mode: "rate", count: 1, per: "day" }, { kind: "prayer", source: "lords-prayer", each: "part" }));
+    const seen = [];
+    for (let i = 0; i < 10; i++) {
+        const day = addDays("2026-01-04", i);
+        seen.push(assignment(s.tracks[0], 4, day, ALL).from);
+        checkIn(s, day, { t: 4 });
+    }
+    assert.deepEqual(seen, [0, 1, 2, 3, 0, 1, 2, 3, 0, 1]);
+    assert.equal(projectedFinish(s.tracks[0], 4, "2026-01-14", ALL), null);
+    undoCheckIn(s, "2026-01-13");
+    assert.equal(s.tracks[0].position, 1);
+    // Parts taken out: the position wraps into what's left
+    assert.equal(assignment({ ...s.tracks[0], position: 3 }, 2, "2026-01-14", ALL).from, 1);
+});
+
+test("praying the Psalms takes Psalm 119 by its 22 stanzas of 8 verses", async () => {
+    const { psalmUnits } = await import("../src/prayer.js");
+    const units = psalmUnits();
+    const stanzas = units.filter((u) => u.passages[0].chapter === 119);
+    assert.equal(units.length, 149 + 22);
+    assert.equal(stanzas.length, 22);
+    assert.deepEqual(stanzas.map((u) => u.passages[0].from), Array.from({ length: 22 }, (_, i) => 8 * i + 1));
+    assert.equal(stanzas.at(-1).passages[0].to, 176);
+    assert.equal(units[118].label, "Psalm 119:1–8 א Aleph");
+});

@@ -10,9 +10,14 @@
 //   { mode: "rate", count, per: "day" | "week" }  - fixed; a missed day just moves the finish later
 //   { mode: "goal", days }                        - finish `days` after the start; recomputed every
 //                                                  day from what's left, so missed days are spread out
+//
+// A prayer track never finishes: it asks for one unit every worship day and goes
+// round its units again (its position is always the next unit, wrapping to 0).
 import { addDays, weekday } from "./dates.js";
 
 const EPS = 1e-9;
+
+export const repeats = (track) => track.kind === "prayer";
 
 export const worshipDaysPerWeek = (worshipDays) => Math.max(1, worshipDays.filter(Boolean).length);
 
@@ -38,6 +43,9 @@ export function unitsPerDay(track, total, day, worshipDays) {
 // What `track` asks for on `day`: new units [from, from + count), or a review of
 // the latest one when no new unit is due.
 export function assignment(track, total, day, worshipDays) {
+    // Parts taken out of a family's prayer plan can leave its position past the end
+    if (repeats(track)) return total ? { finished: false, from: track.position % total, count: 1, review: null, rate: 1 }
+        : { finished: true, from: 0, count: 0, review: null, rate: 0 };
     const remaining = total - track.position;
     if (remaining <= 0) return { finished: true, from: track.position, count: 0, review: null, rate: 0 };
     const rate = unitsPerDay(track, total, day, worshipDays);
@@ -62,6 +70,10 @@ export function checkIn(state, day, totals) {
         const a = assignment(track, totals[track.id], day, state.settings.worshipDays);
         if (a.finished) continue;
         entries.push({ track: track.id, from: a.from, count: a.count, review: a.review, credit: track.credit });
+        if (repeats(track)) {
+            track.position = (a.from + 1) % totals[track.id];
+            continue;
+        }
         track.position += a.count;
         track.credit = Math.max(0, track.credit + a.rate - a.count);
     }
@@ -84,6 +96,7 @@ export function undoCheckIn(state, day) {
 
 // The date the track should finish at its current pace (null if it never will)
 export function projectedFinish(track, total, day, worshipDays) {
+    if (repeats(track)) return null;
     if (track.position >= total) return day;
     if (track.pace.mode === "goal" && day < goalEnd(track)) return addDays(goalEnd(track), -1);
     const rate = unitsPerDay(track, total, day, worshipDays);

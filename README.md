@@ -2,7 +2,9 @@
 
 An installable web app (PWA) for family worship. The family picks a Bible reading plan, a
 catechism and hymns, then sets a goal ("finish in 1 year") or a pace ("1 question a week")
-for each. Every day the **Today** page shows what's due, and one tap on the check mark
+for each. It can also add a prayer plan (A.C.T.S., the Lord's Prayer, praying a psalm a day with
+Psalm 119 by its 22 stanzas, or the family's own order of prayer), which comes up every worship day and goes round again rather than
+finishing. Every day the **Today** page shows what's due, and one tap on the check mark
 records that the family worshipped. **Stats** shows streaks, days per week, a calendar and
 how far along each plan is.
 
@@ -31,7 +33,9 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 - `src/main.js` handles routing with hash routes (`#/`, `#/plans`, `#/stats`, `#/settings`,
   `#/read/<plan>/<n>`).
 - `src/views/` holds one file per screen.
-- `src/catalog.js` lists the plans, catechisms and hymn sources the app offers.
+- `src/catalog.js` lists the plans, catechisms, prayer plans and hymn sources the app offers.
+- `src/prayer.js` holds the prayer plans' parts and turns a prayer track into its units
+  (the whole plan, or one part a day). A family's own plan keeps its parts on its track.
 - `src/content.js` turns each source into its list of **units**: a chapter, a day's
   readings, a catechism question, or a hymn. A hymn plan goes through only the hymns
   the family picks (`track.hymns`), in Let's Sing's numbering. They can add or remove

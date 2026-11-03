@@ -59,6 +59,10 @@ export async function renderStats() {
                 ${state.tracks.map((t) => {
                     const total = unitTotals[t.id];
                     if (!total) return "";
+                    if (t.kind === "prayer") return `<li>
+                        <p><span class="icon">${kindIcon(t)}</span> ${esc(trackName(t))}</p>
+                        <p class="muted small">Prayed together on ${plural(all.byTrack[t.id] ?? 0, "day")}</p>
+                    </li>`;
                     const finish = !t.paused && projectedFinish(t, total, day, worshipDays);
                     const unit = unitWord(t);
                     return `<li>
