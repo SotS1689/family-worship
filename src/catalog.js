@@ -6,11 +6,11 @@
 export const CHURCH = import.meta.env?.MODE === "church";
 
 export const KINDS = {
-    bible: { name: "Bible reading", icon: "📖" },
-    catechism: { name: "Catechism", icon: "❓" },
-    creeds: { name: "Creeds & Confessions", icon: "📜" },
-    prayer: { name: "Prayer", icon: "🙏" },
-    hymns: { name: "Hymns", icon: "🎵" },
+    bible: { name: "Read", icon: "📖" },
+    hymns: { name: "Sing", icon: "🎵" },
+    catechism: { name: "Catechize", icon: "❓" },
+    creeds: { name: "Confess", icon: "📜" },
+    prayer: { name: "Pray", icon: "🙏" },
 };
 
 export const SOURCES = {
