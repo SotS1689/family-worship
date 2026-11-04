@@ -1,5 +1,5 @@
 # Builds the app and publishes it to GitHub Pages
-# (https://sots1689.github.io/family-worship/ once the repo exists under that name).
+# (https://taylordrummond.org/family-worship/), and the church copy (see "church" below).
 # Runs on every push to main, or by hand from the repo's Actions tab ("Run workflow").
 name: Publish web app
 
@@ -42,3 +42,27 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # The same build, also published for the church at
+  # https://familyworship.gracecommunityallentown.org (GitHub Pages from the
+  # gh-pages branch of SotS1689/family-worship-church). CHURCH_DEPLOY_KEY is the
+  # private half of that repo's write-enabled deploy key.
+  church:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+      - run: mkdir site && tar -xf artifact.tar -C site
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.CHURCH_DEPLOY_KEY }}
+          external_repository: SotS1689/family-worship-church
+          publish_branch: gh-pages
+          publish_dir: site
+          cname: familyworship.gracecommunityallentown.org
+          force_orphan: true
+          commit_message: "Publish from SotS1689/family-worship"

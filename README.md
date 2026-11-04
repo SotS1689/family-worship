@@ -28,6 +28,13 @@ Everything is stored on the phone. There are no accounts and no server.
 Pushing to `main` on GitHub publishes the site through `.github/workflows/pages.yml`. To set
 that up, turn on Pages in the repo settings with **Source: GitHub Actions**.
 
+The same push also publishes a church copy at https://familyworship.gracecommunityallentown.org:
+the workflow's `church` job pushes the build to the `gh-pages` branch of
+[SotS1689/family-worship-church](https://github.com/SotS1689/family-worship-church), using the
+`CHURCH_DEPLOY_KEY` secret (the private half of a write deploy key on that repo). The domain's
+DNS (at Fastmail) has a CNAME record `familyworship` → `sots1689.github.io`. Each address keeps
+its own saved settings and progress in the browser.
+
 ## How it's put together
 
 Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
