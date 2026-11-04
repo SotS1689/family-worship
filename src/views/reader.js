@@ -122,7 +122,9 @@ function creedHtml(unit) {
         <div class="answer creed-text ${unit.said ? "said" : ""}">${paras}</div>
         ${proofs.length ? `<details><summary>Scripture proofs</summary><ol class="proofs">${proofs.map((p, i) =>
             `<li><span class="proof-mark">${letter(i)}</span> ${p.map(esc).join("; ")}</li>`).join("")}</ol></details>` : ""}
-        <p class="credits muted small">From <a href="https://symbolics.dev" target="_blank" rel="noopener">symbolics.dev</a> (public domain).</p>`;
+        <p class="credits muted small">${unit.url
+            ? `From <a href="${esc(unit.url)}" target="_blank" rel="noopener">${esc(new URL(unit.url).hostname)}</a>.`
+            : `From <a href="https://symbolics.dev" target="_blank" rel="noopener">symbolics.dev</a> (public domain).`}</p>`;
 }
 
 // Let's Sing's page for the hymn: its title, player, music and the words, which

@@ -20,6 +20,15 @@
       "port": 5175
     },
     {
+      "name": "family-worship-church",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:church"
+      ],
+      "port": 5176
+    },
+    {
       "name": "lets-sing-build",
       "runtimeExecutable": "npx",
       "runtimeArgs": [

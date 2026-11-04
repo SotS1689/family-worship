@@ -43,20 +43,24 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
 
-  # The same build, also published for the church at
-  # https://familyworship.gracecommunityallentown.org (GitHub Pages from the
-  # gh-pages branch of SotS1689/family-worship-church). CHURCH_DEPLOY_KEY is the
-  # private half of that repo's write-enabled deploy key.
+  # The church copy (npm run build:church: no support heart, and the church's
+  # Statement of Faith), published at https://familyworship.gracecommunityallentown.org
+  # (GitHub Pages from the gh-pages branch of SotS1689/family-worship-church).
+  # CHURCH_DEPLOY_KEY is the private half of that repo's write-enabled deploy key.
   church:
     needs: build
     runs-on: ubuntu-latest
     permissions:
-      actions: read
+      contents: read
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          name: github-pages
-      - run: mkdir site && tar -xf artifact.tar -C site
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:church
+      - run: mv dist site
       - uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.CHURCH_DEPLOY_KEY }}

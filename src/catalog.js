@@ -1,6 +1,10 @@
 // What a family can choose to go through. Each choice is a list of "units"
 // (a chapter, a day's readings, a catechism question, a hymn) built by content.js.
 
+// The church copy at familyworship.gracecommunityallentown.org (npm run build:church): no
+// support heart, and the church's Statement of Faith first among the confessions.
+export const CHURCH = import.meta.env?.MODE === "church";
+
 export const KINDS = {
     bible: { name: "Bible reading", icon: "📖" },
     catechism: { name: "Catechism", icon: "❓" },
@@ -76,6 +80,8 @@ export const SOURCES = {
     // plan (clauses: false when it has no articles to take one at a time). A confession is
     // read through at a pace, a paragraph or a chapter at a time (the track's step).
     creeds: {
+        // From the church's "What We Believe" page (npm run fetch-statement)
+        ...(CHURCH ? { gcc: { type: "confession", name: "Grace Community Church Statement of Faith", short: "GCC", chapter: "Article", about: "Our church's statement of faith, 12 articles, with Scripture proofs.", unit: "paragraph" } } : {}),
         apostles: { type: "creed", name: "The Apostles' Creed", about: "The church's oldest summary of the faith, in twelve articles.", unit: "article" },
         nicene: { type: "creed", name: "The Nicene Creed (381)", about: "The creed of the Council of Constantinople, confessing the Son and the Spirit with the Father, one God.", unit: "creed", clauses: false },
         athanasian: { type: "creed", name: "The Athanasian Creed", about: "The Trinity and the person of Christ, in 42 articles.", unit: "article" },

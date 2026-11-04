@@ -112,15 +112,17 @@ export async function creedUnits({ source, each, step }) {
     const short = SOURCES.creeds[source]?.short ?? doc.short ?? doc.title;
     const word = SOURCES.creeds[source]?.chapter;
     const heading = (c) => chapterHeading(c, word);
-    if (step === "chapter") return doc.chapters.map((c) => ({
+    // A confession of the app's own (the church's Statement of Faith) names the page it came from
+    const from = (units) => (doc.url ? units.map((u) => ({ ...u, url: doc.url })) : units);
+    if (step === "chapter") return from(doc.chapters.map((c) => ({
         label: `${short} ${c.n}`, heading: heading(c), doc: doc.title,
         paras: c.paragraphs.map((p) => ({ n: c.paragraphs.length > 1 ? p.n : null, segs: p.segs })), preview: c.title,
-    }));
-    return doc.chapters.flatMap((c) => c.paragraphs.map((p) => ({
+    })));
+    return from(doc.chapters.flatMap((c) => c.paragraphs.map((p) => ({
         label: c.paragraphs.length > 1 ? `${short} ${c.n}.${p.n}` : `${short} ${c.n}`,
         heading: heading(c), doc: doc.title,
         paras: [{ n: c.paragraphs.length > 1 ? p.n : null, segs: p.segs }], preview: c.title,
-    })));
+    }))));
 }
 
 // One book of a Bible version: chapters[chapter - 1] = [[verse, text], ...]

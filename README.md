@@ -35,6 +35,12 @@ the workflow's `church` job pushes the build to the `gh-pages` branch of
 DNS (at Fastmail) has a CNAME record `familyworship` → `sots1689.github.io`. Each address keeps
 its own saved settings and progress in the browser.
 
+The church copy is built with `npm run build:church` (`npm run dev:church` to try it at
+http://localhost:5176). It leaves out the support heart and lists Grace Community Church's
+Statement of Faith first under Creeds & Confessions (`CHURCH` in `src/catalog.js`). The
+statement is copied from the church's "What We Believe" page into `public/data/creeds/gcc.json`
+by `npm run fetch-statement`: run that again after the page changes.
+
 ## How it's put together
 
 Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
