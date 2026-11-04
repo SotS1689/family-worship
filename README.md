@@ -2,7 +2,9 @@
 
 An installable web app (PWA) for family worship. The family picks a Bible reading plan, a
 catechism and hymns, then sets a goal ("finish in 1 year") or a pace ("1 question a week")
-for each. It can also add a prayer plan (A.C.T.S., the Lord's Prayer, praying a psalm a day with
+for each. A **Creeds & Confessions** plan says a creed together every worship day (whole, or an
+article at a time, going round again), or reads through a confession a paragraph or a chapter at a
+time with its Scripture proofs. It can also add a prayer plan (A.C.T.S., the Lord's Prayer, praying a psalm a day with
 Psalm 119 by its 22 stanzas, or the family's own order of prayer), which comes up every worship day and goes round again rather than
 finishing. Every day the **Today** page shows what's due, and one tap on the check mark
 records that the family worshipped. **Stats** shows streaks, days per week, a calendar and
@@ -33,7 +35,10 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 - `src/main.js` handles routing with hash routes (`#/`, `#/plans`, `#/stats`, `#/settings`,
   `#/read/<plan>/<n>`).
 - `src/views/` holds one file per screen.
-- `src/catalog.js` lists the plans, catechisms, prayer plans and hymn sources the app offers.
+- `src/catalog.js` lists the plans, catechisms, creeds and confessions, prayer plans and hymn sources the app offers.
+- `creedUnits` in `src/content.js` turns a creed into one unit (said whole) or a unit per article, and a
+  confession into a unit per paragraph or per chapter (the track's `step`). A creed repeats like a prayer
+  plan (`repeats` in `src/schedule.js`); a confession is paced like a catechism.
 - `src/prayer.js` holds the prayer plans' parts and turns a prayer track into its units
   (the whole plan, or one part a day). A family's own plan keeps its parts on its track.
 - `src/content.js` turns each source into its list of **units**: a chapter, a day's
@@ -85,7 +90,8 @@ published there. Until the player loads, or if it can't, the page shows the word
 | King James Version | [eBible.org `eng-kjv2006`](https://ebible.org/details.php?id=eng-kjv2006) | Public domain (outside the UK) |
 | English Standard Version | Crossway's [ESV API](https://api.esv.org), read as each passage opens with the family's own key (entered in Settings, never in this repo; see `src/esv.js`) | © Crossway, free for non-commercial use under the API terms |
 | Other online translations | [Free Use Bible API](https://bible.helloao.org), read as each chapter opens | Public domain or free licences (see `VERSIONS` in `src/bible.js`) |
-| Westminster Shorter, 1695 Baptist and Heidelberg catechisms | [Creeds.json](https://github.com/NonlinearFruit/Creeds.json) | Public-domain texts |
+| Westminster Shorter, 1695 Baptist and Heidelberg catechisms | [Creeds.json](https://github.com/NonlinearFruit/Creeds.json), with their Scripture proofs from [symbolics.dev](https://symbolics.dev) | Public-domain texts; symbolics.dev is CC0 |
+| Westminster Larger Catechism; creeds (Apostles', Nicene, Athanasian, Chalcedonian, Nicaea 325) and confessions (1689, Westminster, Savoy, Philadelphia, Belgic, Dort, Orthodox Creed, Standard Confession) | [symbolics.dev](https://symbolics.dev)'s JSON API, in its modern-spelling editions where it has them (`CREED_DOCS` in `scripts/fetch-content.mjs`) | CC0 |
 | An Orthodox Catechism (Hercules Collins, 1680) | The pastor's Word document `The Orthodox Catechism.docx`, imported by `scripts/import_collins.py` | Public-domain text |
 | Baptist Catechism music | Jim Scott Orrick, *The Baptist Catechism Set to Music*. Played from [baptistcatechism.org](https://baptistcatechism.org)'s storage, not copied here (see `music` in `src/catalog.js`) | © 2001 Orrick, used by permission on baptistcatechism.org. That site's developer has allowed its use here. |
 | Hymns and psalms | [Let's Sing](https://github.com/SotS1689/lets-sing) `hymns_data.json`; played by Let's Sing itself, embedded (see above) | As Let's Sing |

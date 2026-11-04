@@ -4,6 +4,7 @@
 export const KINDS = {
     bible: { name: "Bible reading", icon: "📖" },
     catechism: { name: "Catechism", icon: "❓" },
+    creeds: { name: "Creeds & Confessions", icon: "📜" },
     prayer: { name: "Prayer", icon: "🙏" },
     hymns: { name: "Hymns", icon: "🎵" },
 };
@@ -57,12 +58,37 @@ export const SOURCES = {
             },
         },
         heidelberg: { name: "Heidelberg Catechism", short: "Heidelberg", unit: "question" },
+        wlc: {
+            name: "Westminster Larger Catechism",
+            short: "WLC",
+            about: "The Westminster Assembly's fuller catechism, 196 questions, in modern spelling.",
+            unit: "question",
+        },
         collins: {
             name: "An Orthodox Catechism (Collins, 1680)",
             short: "Orthodox Catechism",
             about: "Hercules Collins' Particular Baptist revision of the Heidelberg Catechism, with his questions on baptism. 150 questions.",
             unit: "question",
         },
+    },
+    // From symbolics.dev (public/data/creeds/<id>.json, see content.js). A creed comes up
+    // every worship day, said whole or an article at a time, and goes round like a prayer
+    // plan (clauses: false when it has no articles to take one at a time). A confession is
+    // read through at a pace, a paragraph or a chapter at a time (the track's step).
+    creeds: {
+        apostles: { type: "creed", name: "The Apostles' Creed", about: "The church's oldest summary of the faith, in twelve articles.", unit: "article" },
+        nicene: { type: "creed", name: "The Nicene Creed (381)", about: "The creed of the Council of Constantinople, confessing the Son and the Spirit with the Father, one God.", unit: "creed", clauses: false },
+        athanasian: { type: "creed", name: "The Athanasian Creed", about: "The Trinity and the person of Christ, in 42 articles.", unit: "article" },
+        chalcedon: { type: "creed", name: "The Chalcedonian Definition (451)", about: "Christ truly God and truly man, in one person.", unit: "creed", clauses: false },
+        nicaea: { type: "creed", name: "The Creed of Nicaea (325)", about: "The first council's creed against Arius, as printed in An Orthodox Catechism (1680).", unit: "creed", clauses: false },
+        lbcf1689: { type: "confession", name: "Second London Baptist Confession (1689)", short: "2LCF", about: "32 chapters, 160 paragraphs, with Scripture proofs. Modern spelling.", unit: "paragraph" },
+        wcf: { type: "confession", name: "Westminster Confession of Faith (1646)", short: "WCF", about: "33 chapters, 172 paragraphs, with Scripture proofs. Modern spelling.", unit: "paragraph" },
+        savoy: { type: "confession", name: "Savoy Declaration (1658)", short: "Savoy", about: "The Congregationalists' revision of the Westminster Confession, 33 chapters. Modern spelling.", unit: "paragraph" },
+        phila1742: { type: "confession", name: "Philadelphia Confession (1742)", short: "PCF", about: "The 1689 Confession with chapters on singing and the laying on of hands, as printed by B. Franklin.", unit: "paragraph" },
+        belgic: { type: "confession", name: "Belgic Confession (1561)", short: "Belgic", chapter: "Article", about: "Guido de Brès' confession of the Reformed churches in the Low Countries, 37 articles.", unit: "paragraph" },
+        dort: { type: "confession", name: "Canons of Dort (1619)", short: "Dort", chapter: "", about: "The Synod of Dort on predestination, the atonement, grace and perseverance: four heads, 59 articles.", unit: "paragraph" },
+        orthodox1679: { type: "confession", name: "Orthodox Creed (1679)", short: "Orthodox Creed", chapter: "Article", about: "The General Baptists' confession, 50 articles, with Scripture proofs.", unit: "paragraph" },
+        standard1660: { type: "confession", name: "Standard Confession (1660)", short: "Standard Confession", about: "The General Baptists' confession of 1660, 25 articles.", unit: "paragraph" },
     },
     // The plans themselves are in prayer.js
     prayer: {

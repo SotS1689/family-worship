@@ -1,9 +1,9 @@
 // Small helpers the screens share.
-import { loadUnits } from "./content.js";
+import { loadUnits, creedUnits } from "./content.js";
 import { SOURCES, KINDS } from "./catalog.js";
 import { VERSIONS } from "./bible.js";
 import { state } from "./store.js";
-import { worshipDaysPerWeek } from "./schedule.js";
+import { worshipDaysPerWeek, repeats } from "./schedule.js";
 import { prayerUnits, prayerPlanOf } from "./prayer.js";
 
 export const $ = (sel, root = document) => root.querySelector(sel);
@@ -40,6 +40,7 @@ export function sourceUnits(kind, source, section) {
 // (track.hymns, a list of hymn ids), kept in Let's Sing's order
 export async function unitsOf(track) {
     if (track.kind === "prayer") return prayerUnits(track);
+    if (track.kind === "creeds") return creedUnits(track);
     const all = await sourceUnits(track.kind, track.source, track.section);
     if (track.kind !== "hymns" || !track.hymns) return all;
     const chosen = new Set(track.hymns);
@@ -63,7 +64,7 @@ export const trackName = (track) => track.section ? `${track.section.ref} by ${t
     : track.kind === "prayer" ? prayerPlanOf(track).name : sourceOf(track)?.name ?? track.source;
 export const kindIcon = (track) => KINDS[track.kind].icon;
 // What one step of the track is called: "chapter", "question"; a section of Scripture says
-export const unitWord = (track) => track.section?.step ?? sourceOf(track)?.unit ?? "unit";
+export const unitWord = (track) => track.section?.step ?? (track.kind === "creeds" ? track.step : null) ?? sourceOf(track)?.unit ?? "unit";
 
 // The family's Bible version (the BSB if a saved one is no longer offered)
 export const bibleVersion = () => VERSIONS[state.settings.bibleVersion] ? state.settings.bibleVersion : "bsb";
@@ -82,6 +83,7 @@ export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 export function paceText(track) {
     if (track.source === "psalms") return "A psalm each worship day";
     if (track.kind === "prayer") return track.each === "part" ? "One part each worship day, in turn" : "The whole plan each worship day";
+    if (repeats(track)) return track.each === "part" ? "One article each worship day, in turn" : "Said together each worship day";
     const unit = unitWord(track);
     const { pace } = track;
     if (pace.mode === "goal") {

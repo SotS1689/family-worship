@@ -1,7 +1,7 @@
 // Today: what each track asks for, and the one big check mark.
 import { state, save } from "../store.js";
 import { today, formatDay } from "../dates.js";
-import { assignment, checkIn, undoCheckIn } from "../schedule.js";
+import { assignment, checkIn, undoCheckIn, repeats } from "../schedule.js";
 import { currentStreak, nextMilestone } from "../stats.js";
 import { app, esc, setTitle, unitsOf, totalsFor, trackName, kindIcon, toast, nextRender, isCurrent } from "../ui.js";
 
@@ -16,7 +16,7 @@ export async function renderToday() {
         app().innerHTML = `
             <section class="welcome card">
                 <h2>Welcome</h2>
-                <p>Choose what your family will go through together: a Bible reading plan, a catechism, a way to pray, and hymns.
+                <p>Choose what your family will go through together: a Bible reading plan, a catechism, a creed or confession, a way to pray, and hymns.
                    Set a goal or a pace for each, then tap the check mark each day you worship together.</p>
                 <a class="btn primary" href="#/plans/new">Set up family worship</a>
             </section>`;
@@ -95,10 +95,17 @@ function itemHtml({ track, units, from, count, review, finished, skipped, error 
         return `<li class="card">${head}<div class="units"><a class="unit" href="#/read/${track.id}/${from % units.length}">${
             esc(unit.parts.length > 1 ? "Pray together" : `Pray: ${unit.label}`)}</a></div>${about ? `<p class="preview">${esc(about)}</p>` : ""}</li>`;
     }
+    // A creed said together, whole or an article at a time
+    if (repeats(track)) {
+        const i = from % units.length, unit = units[i];
+        return `<li class="card">${head}<div class="units"><a class="unit" href="#/read/${track.id}/${i}">${
+            esc(unit.preview ? unit.label : "Say it together")}</a></div>${unit.preview ? `<p class="preview">${esc(unit.preview)}</p>` : ""}</li>`;
+    }
     const links = [];
     for (let i = from; i < from + count; i++) links.push(`<a class="unit" href="#/read/${track.id}/${i}">${esc(units[i].label)}</a>`);
     if (review != null) links.push(`<a class="unit review" href="#/read/${track.id}/${review}">Review: ${esc(units[review].label)}</a>`);
     if (!links.length) links.push(`<span class="muted">Nothing new today.</span>`);
-    const preview = track.kind === "catechism" && count ? `<p class="preview">${esc(units[from].q)}</p>` : "";
+    const preview = !count ? "" : track.kind === "catechism" ? `<p class="preview">${esc(units[from].q)}</p>`
+        : track.kind === "creeds" && units[from].preview ? `<p class="preview">${esc(units[from].preview)}</p>` : "";
     return `<li class="card">${head}<div class="units">${links.join("")}</div>${preview}</li>`;
 }

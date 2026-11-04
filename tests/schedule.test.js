@@ -118,3 +118,14 @@ test("praying the Psalms takes Psalm 119 by its 22 stanzas of 8 verses", async (
     assert.equal(stanzas.at(-1).passages[0].to, 176);
     assert.equal(units[118].label, "Psalm 119:1–8 א Aleph");
 });
+
+test("a creed goes round every worship day; a confession is read through at its pace", () => {
+    const creed = track({ mode: "rate", count: 1, per: "day" }, { id: "c", kind: "creeds", source: "apostles", each: "part" });
+    const conf = track({ mode: "rate", count: 1, per: "day" }, { id: "w", kind: "creeds", source: "wcf", step: "paragraph" });
+    const s = stateWith(creed, conf);
+    runDays(s, { c: 12, w: 172 }, "2026-01-04", 14);
+    assert.equal(s.tracks[0].position, 2); // twelve articles, then round again
+    assert.equal(s.tracks[1].position, 14);
+    assert.equal(projectedFinish(s.tracks[0], 12, "2026-01-18", ALL), null);
+    assert.ok(projectedFinish(s.tracks[1], 172, "2026-01-18", ALL));
+});

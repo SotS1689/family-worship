@@ -28,6 +28,7 @@ export async function renderReader(trackId, index) {
     // A psalm to pray: the guide, then the psalm as a Bible reading
     else if (track.kind === "prayer" && unit.passages) body = `<p class="hint guide">${esc(unit.guide)}</p>${await bibleHtml(unit)}`;
     else if (track.kind === "prayer") body = prayerHtml(unit);
+    else if (track.kind === "creeds") body = creedHtml(unit);
     else body = hymnHtml(unit);
     if (!isCurrent(ticket)) return;
     app().innerHTML = `<article class="reader ${track.kind}">${body}</article>${units.length > 1 ? nav : ""}`;
@@ -102,6 +103,26 @@ function prayerHtml(unit) {
             </li>`).join("")}
         </ol>
         ${unit.credit ? `<p class="credits muted small">${esc(unit.credit)}</p>` : ""}`;
+}
+
+// A creed, an article of one, or a confession's paragraph or chapter. Each piece of the
+// text that has Scripture proofs gets a letter, and the proofs are listed under it by letter.
+const LETTERS = "abcdefghijklmnopqrstuvwxyz";
+const letter = (i) => (i >= 26 ? LETTERS[Math.floor(i / 26) - 1] : "") + LETTERS[i % 26];
+function creedHtml(unit) {
+    const proofs = [];
+    const paras = unit.paras.map((para) => `<p>${para.n != null ? `<span class="pnum">${para.n}.</span> ` : ""}${para.segs.map((s) => {
+        if (!s.p?.length) return esc(s.t);
+        proofs.push(s.p);
+        return `${esc(s.t)}<sup class="proof-mark">${letter(proofs.length - 1)}</sup>`;
+    }).join(" ")}</p>`).join("");
+    return `
+        <p class="qnum">${esc(unit.doc)}</p>
+        ${unit.heading !== unit.doc ? `<h1 class="question">${esc(unit.heading)}</h1>` : ""}
+        <div class="answer creed-text ${unit.said ? "said" : ""}">${paras}</div>
+        ${proofs.length ? `<details><summary>Scripture proofs</summary><ol class="proofs">${proofs.map((p, i) =>
+            `<li><span class="proof-mark">${letter(i)}</span> ${p.map(esc).join("; ")}</li>`).join("")}</ol></details>` : ""}
+        <p class="credits muted small">From <a href="https://symbolics.dev" target="_blank" rel="noopener">symbolics.dev</a> (public domain).</p>`;
 }
 
 // Let's Sing's page for the hymn: its title, player, music and the words, which

@@ -9,6 +9,8 @@
 //            (section: for the "section" Bible source, { ref: "Matthew 5-7", step: "verse" | "paragraph" | "chapter" })
 //            (prayer tracks: each: "all" | "part"; a family's own plan (source "custom") also has
 //             name and parts: [{ title, prompt }]. See prayer.js)
+//            (creeds tracks: a creed has each: "all" | "part" and goes round like a prayer plan;
+//             a confession has step: "paragraph" | "chapter". See creedUnits in content.js)
 //   log: { "YYYY-MM-DD": { at, entries: [{ track, from, count, review, credit }], late? } }
 // }
 import { today } from "./dates.js";
@@ -54,7 +56,7 @@ export function save() {
 // Ask the browser not to clear our data when space runs low (installed apps usually get this)
 navigator.storage?.persist?.().catch(() => {});
 
-export function newTrack({ kind, source, pace, start = today(), position = 0, hymns, section, each, name, parts }) {
+export function newTrack({ kind, source, pace, start = today(), position = 0, hymns, section, each, step, name, parts }) {
     const track = {
         id: Math.random().toString(36).slice(2, 10),
         kind, source, pace, start, position,
@@ -63,10 +65,11 @@ export function newTrack({ kind, source, pace, start = today(), position = 0, hy
         ...(source === "section" ? { section } : {}),
         ...(kind === "prayer" ? { each } : {}),
         ...(kind === "prayer" && source === "custom" ? { name, parts } : {}),
+        ...(kind === "creeds" ? (step ? { step } : { each }) : {}),
     };
     state.tracks.push(track);
-    // Bible, catechism, prayer, then hymns: the usual order of family worship
-    const order = ["bible", "catechism", "prayer", "hymns"];
+    // Bible, catechism, creed or confession, prayer, then hymns: the usual order of family worship
+    const order = ["bible", "catechism", "creeds", "prayer", "hymns"];
     state.tracks.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
     save();
     return track;

@@ -1,7 +1,7 @@
 // Plans: the family's tracks, and the form to add or change one.
 import { state, save, newTrack } from "../store.js";
 import { today, formatDay } from "../dates.js";
-import { unitsPerDay, projectedFinish } from "../schedule.js";
+import { unitsPerDay, projectedFinish, repeats } from "../schedule.js";
 import { KINDS, SOURCES, GOALS } from "../catalog.js";
 import { offlineStatus, saveOffline } from "../letsSing.js";
 import { PRAYER_PLANS, blankPart } from "../prayer.js";
@@ -17,7 +17,7 @@ export async function renderPlans() {
         <ul class="tracks">
             ${state.tracks.map((t) => {
                 const total = totals[t.id];
-                if (t.kind === "prayer") return `<li class="card">
+                if (repeats(t)) return `<li class="card">
                     <a class="track-link" href="#/plans/${t.id}">
                         <span class="icon">${kindIcon(t)}</span>
                         <span class="track-name">${esc(trackName(t))}</span>
@@ -47,12 +47,21 @@ export async function renderPlans() {
 const DEFAULT_PACE = {
     bible: { mode: "goal", days: 365 },
     catechism: { mode: "rate", count: 1, per: "week" },
+    creeds: { mode: "rate", count: 1, per: "day" }, // a confession; a creed, like prayer, comes up every worship day
     prayer: { mode: "rate", count: 1, per: "day" }, // fixed: a prayer plan comes up every worship day
     hymns: { mode: "rate", count: 2, per: "week" },
 };
 // A part of the Bible may be short, so it starts at one step a day rather than a goal
 const SECTION_PACE = { mode: "rate", count: 1, per: "day" };
 const STEPS = ["verse", "paragraph", "chapter"];
+// A confession, a paragraph a day or a chapter a week to start with
+const CONFESSION_PACE = { paragraph: { mode: "rate", count: 1, per: "day" }, chapter: { mode: "rate", count: 1, per: "week" } };
+const GROUPS = { creed: "Creeds", confession: "Confessions" };
+// What "each" offers: a prayer plan's parts, or a creed's articles
+const EACH_LABELS = {
+    prayer: { legend: "Pray through", all: "The whole plan each day", part: "One part a day, in turn" },
+    creeds: { legend: "Say it", all: "The whole creed each day", part: "One article a day, in turn" },
+};
 
 // New (trackId undefined) or edit
 export async function renderPlanForm(trackId) {
@@ -123,11 +132,19 @@ export async function renderPlanForm(trackId) {
                 <p class="muted small">Or start from a suggestion and change it:
                     ${Object.entries(PRAYER_PLANS).map(([k, p]) => `<button type="button" class="btn small" data-copy="${k}">${esc(p.name)}</button>`).join(" ")}</p>
             </fieldset>
+            <fieldset id="confession-step" hidden ${editing ? "disabled" : ""}>
+                <legend>Read it</legend>
+                <div class="seg wide">
+                    <button type="button" data-cstep="paragraph">A paragraph at a time</button>
+                    <button type="button" data-cstep="chapter">A chapter at a time</button>
+                </div>
+                <p class="muted small">Each paragraph comes with its Scripture proofs.</p>
+            </fieldset>
             <fieldset id="prayer-pick" hidden>
-                <legend>Pray through</legend>
+                <legend id="each-legend">Pray through</legend>
                 <div class="seg wide" id="each">
-                    <button type="button" data-each="all">The whole plan each day</button>
-                    <button type="button" data-each="part">One part a day, in turn</button>
+                    <button type="button" data-each="all"></button>
+                    <button type="button" data-each="part"></button>
                 </div>
                 <p class="muted small">It comes up every worship day and starts again from the top when it reaches the end.</p>
             </fieldset>
@@ -165,8 +182,13 @@ export async function renderPlanForm(trackId) {
 
     async function refreshSource() {
         for (const b of form.querySelectorAll("[data-kind]")) b.classList.toggle("on", b.dataset.kind === draft.kind);
-        $("#source").innerHTML = Object.entries(SOURCES[draft.kind]).map(([k, s]) =>
-            `<option value="${k}" ${s.unavailable ? "disabled" : ""} ${k === draft.source ? "selected" : ""}>${esc(s.name)}${s.unavailable ? " (coming)" : ""}</option>`).join("");
+        const option = ([k, s]) =>
+            `<option value="${k}" ${s.unavailable ? "disabled" : ""} ${k === draft.source ? "selected" : ""}>${esc(s.name)}${s.unavailable ? " (coming)" : ""}</option>`;
+        const sources = Object.entries(SOURCES[draft.kind]);
+        // Creeds & Confessions come in two groups
+        $("#source").innerHTML = sources.some(([, s]) => s.type)
+            ? Object.entries(GROUPS).map(([type, label]) => `<optgroup label="${label}">${sources.filter(([, s]) => s.type === type).map(option).join("")}</optgroup>`).join("")
+            : sources.map(option).join("");
         const src = SOURCES[draft.kind][draft.source];
         $("#about").textContent = src.about ?? "";
         $("#hymn-pick").hidden = draft.kind !== "hymns";
@@ -174,10 +196,29 @@ export async function renderPlanForm(trackId) {
         const prayer = draft.kind === "prayer";
         // Praying the Psalms is a psalm a day, from wherever the family starts
         const psalms = prayer && draft.source === "psalms";
-        $("#prayer-pick").hidden = !prayer || psalms;
+        // A creed is said every worship day, whole or (if it has articles) an article at a time
+        const creed = draft.kind === "creeds" && src.type === "creed";
+        const confession = draft.kind === "creeds" && src.type === "confession";
+        $("#prayer-pick").hidden = !(prayer && !psalms) && !(creed && src.clauses !== false);
         $("#prayer-own").hidden = !prayer || draft.source !== "custom";
-        $("#pace-pick").hidden = prayer;
-        $("#position-pick").hidden = prayer && !psalms;
+        $("#confession-step").hidden = !confession;
+        $("#pace-pick").hidden = prayer || creed;
+        $("#position-pick").hidden = (prayer && !psalms) || creed;
+        const labels = EACH_LABELS[draft.kind];
+        if (labels) {
+            $("#each-legend").textContent = labels.legend;
+            for (const b of form.querySelectorAll("[data-each]")) b.textContent = labels[b.dataset.each];
+        }
+        if (creed) {
+            delete draft.step;
+            draft.each = src.clauses === false ? "all" : draft.each ?? "all";
+            refreshEach();
+        }
+        if (confession) {
+            delete draft.each;
+            draft.step ??= "paragraph";
+            refreshConfessionStep();
+        }
         if (prayer) {
             draft.each ??= "all";
             refreshEach();
@@ -225,7 +266,7 @@ export async function renderPlanForm(trackId) {
             $("#section-note").classList.toggle("error", !!problem);
         }
         $("#unit-word").textContent = `${unitWord(draft)}(s)`;
-        $("#position").innerHTML = units.map((u, i) => `<option value="${i}" ${i === draft.position ? "selected" : ""}>${esc(u.q ? `${u.label} ${u.q}` : u.label)}</option>`).join("");
+        $("#position").innerHTML = units.map((u, i) => `<option value="${i}" ${i === draft.position ? "selected" : ""}>${esc(u.q ? `${u.label} ${u.q}` : u.preview ? `${u.label} · ${u.preview}` : u.label)}</option>`).join("");
         $("#position").disabled = !units.length;
         refreshPace();
     }
@@ -250,7 +291,21 @@ export async function renderPlanForm(trackId) {
         });
     }
 
-    // ---- Prayer ----
+    // ---- Confession: a paragraph or a chapter at a time ----
+    function refreshConfessionStep() {
+        for (const b of form.querySelectorAll("[data-cstep]")) b.classList.toggle("on", b.dataset.cstep === draft.step);
+    }
+    for (const b of form.querySelectorAll("[data-cstep]")) {
+        b.addEventListener("click", () => {
+            draft.step = b.dataset.cstep;
+            draft.position = 0;
+            draft.pace = CONFESSION_PACE[draft.step];
+            refreshConfessionStep();
+            refreshUnits();
+        });
+    }
+
+    // ---- Prayer, and a creed's articles ----
     function refreshEach() {
         for (const b of form.querySelectorAll("[data-each]")) b.classList.toggle("on", b.dataset.each === draft.each);
     }
@@ -515,7 +570,8 @@ export async function renderPlanForm(trackId) {
     $("#source").addEventListener("change", (e) => {
         draft.source = e.target.value;
         draft.position = 0;
-        draft.pace = draft.source === "section" ? SECTION_PACE : DEFAULT_PACE[draft.kind];
+        draft.pace = draft.source === "section" ? SECTION_PACE
+            : draft.kind === "creeds" && draft.step ? CONFESSION_PACE[draft.step] : DEFAULT_PACE[draft.kind];
         refreshSource();
     });
     const readPace = () => {
@@ -563,6 +619,7 @@ export async function renderPlanForm(trackId) {
             if (draft.kind === "hymns") editing.hymns = draft.hymns;
             if (draft.kind === "prayer") Object.assign(editing, draft.source === "custom"
                 ? { each: draft.each, name: draft.name, parts: draft.parts } : { each: draft.each });
+            if (draft.kind === "creeds" && draft.each) editing.each = draft.each;
             save();
         } else {
             newTrack(draft);

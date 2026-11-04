@@ -14,10 +14,12 @@
 // A prayer track never finishes: it asks for one unit every worship day and goes
 // round its units again (its position is always the next unit, wrapping to 0).
 import { addDays, weekday } from "./dates.js";
+import { SOURCES } from "./catalog.js";
 
 const EPS = 1e-9;
 
-export const repeats = (track) => track.kind === "prayer";
+// So does a creed (Creeds & Confessions), said every worship day; a confession is read through
+export const repeats = (track) => track.kind === "prayer" || (track.kind === "creeds" && SOURCES.creeds[track.source]?.type === "creed");
 
 export const worshipDaysPerWeek = (worshipDays) => Math.max(1, worshipDays.filter(Boolean).length);
 

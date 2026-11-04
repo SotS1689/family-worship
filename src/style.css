@@ -138,6 +138,9 @@ ul { padding: 0; margin: 0; }
 .seg button.on { background: var(--accent); color: var(--accent-ink); }
 .seg.wide { display: flex; }
 .seg.wide button { flex: 1; }
+/* The five kinds of plan wrap onto two rows on a phone */
+#kinds { flex-wrap: wrap; border-radius: 14px; }
+#kinds button { flex: 1 1 5.5rem; }
 
 .bar { height: 8px; background: var(--missed); border-radius: 99px; overflow: hidden; margin: .5rem 0 .25rem; }
 .bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--gold)); border-radius: 99px; }
@@ -194,6 +197,14 @@ select.version.wide { width: 100%; border-radius: 10px; margin-bottom: .5rem; }
 .question { font-size: 1.45rem; }
 .answer { font-size: 1.25rem; border-left: 4px solid var(--gold); padding-left: 1rem; }
 .answer p { margin: 0 0 .8em; }
+/* Creeds & Confessions: a confession's paragraphs read a little smaller than a creed said together */
+.creed-text { font-size: 1.12rem; }
+.creed-text.said { font-size: 1.25rem; }
+.creed-text .pnum { font-family: var(--sans); font-weight: 700; color: var(--green); }
+.proof-mark { font-family: var(--sans); font-size: .7em; color: var(--gold); font-weight: 700; }
+.proofs { list-style: none; padding-left: 0; font-family: var(--sans); font-size: .95rem; }
+.proofs li { margin: .25rem 0; }
+.proofs .proof-mark { display: inline-block; min-width: 1.4em; font-size: .85em; }
 .sung {
     margin: 1.25rem 0 0; padding: .9rem 1rem; font-family: var(--sans);
     background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);

@@ -3,7 +3,7 @@
 // (scripts/stamp-sw.mjs).
 //
 // Two caches:
-// - The app shell (page, code, icons, catechisms, hymns, plans) in a cache named
+// - The app shell (page, code, icons, catechisms, creeds, hymns, plans) in a cache named
 //   after VERSION, a hash of every published file: each release replaces it.
 // - Bible books in BIBLE_CACHE, filled as each book is first opened. Its name is a
 //   hash of the Bible files only, so app releases keep the books already saved.

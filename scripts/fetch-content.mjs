@@ -4,6 +4,9 @@
 //               -> public/data/bible/<bsb|kjv>/<BOOK>.json   [[ [verse, text], ... ] per chapter]
 //   Catechisms  NonlinearFruit/Creeds.json (Unlicense / public-domain texts)
 //               -> public/data/catechisms/<id>.json
+//               with Scripture proofs from symbolics.dev, and the Larger Catechism from there
+//   Creeds &    symbolics.dev's JSON API (CC0): creeds and confessions with their proofs
+//   Confessions -> public/data/creeds/<id>.json
 //   Hymns       SotS1689/lets-sing hymns_data.json (the Let's Sing master copy)
 //               -> public/data/hymns.json
 //               and its hymn-list matcher, web/src/match.js -> src/vendor/match.js
@@ -106,6 +109,30 @@ for (const [file, bytes] of Object.entries(usfm)) {
 if (Object.keys(paragraphs).length !== 66) throw new Error(`Paragraphs: ${Object.keys(paragraphs).length} books, expected 66`);
 write("paragraphs.json", paragraphs);
 
+// ---- symbolics.dev ----
+// Creeds, confessions and catechisms as data, with their Scripture proofs (CC0):
+// https://symbolics.dev/api/v1/documents/<id>
+const symbolics = async (doc) => JSON.parse(await text(`https://symbolics.dev/api/v1/documents/${doc}`, `symbolics-${doc}.json`));
+// OSIS book codes, in the same order as BOOKS
+const OSIS = ("Gen Exod Lev Num Deut Josh Judg Ruth 1Sam 2Sam 1Kgs 2Kgs 1Chr 2Chr Ezra Neh Esth Job Ps Prov Eccl Song Isa Jer "
+    + "Lam Ezek Dan Hos Joel Amos Obad Jonah Mic Nah Hab Zeph Hag Zech Mal Matt Mark Luke John Acts Rom 1Cor 2Cor Gal Eph Phil "
+    + "Col 1Thess 2Thess 1Tim 2Tim Titus Phlm Heb Jas 1Pet 2Pet 1John 2John 3John Jude Rev").split(" ");
+const OSIS_NAME = Object.fromEntries(OSIS.map((o, i) => [o, BOOKS[i].name]));
+// "Rom.2.14-Rom.2.15" -> "Romans 2:14–15"; "Ps.19" -> "Psalms 19"
+function osisLabel(osis) {
+    const [a, b] = osis.split("-").map((x) => x.split("."));
+    const name = OSIS_NAME[a[0]];
+    if (!name) throw new Error(`Unknown OSIS book in ${osis}`);
+    const one = (r) => r.slice(1).join(":");
+    if (!b) return `${name} ${one(a)}`;
+    if (b[0] !== a[0]) return `${name} ${one(a)} – ${OSIS_NAME[b[0]]} ${one(b)}`;
+    return `${name} ${one(a)}–${b[1] === a[1] && b.length > 2 ? b[2] : one(b)}`;
+}
+// A segment's proofs as printed ("Luke 16:29, 31"), except that one printed without its
+// book ("2:14–15", the book of the proof before it) is written out from its OSIS
+const proofLabels = (segment) => (segment.refs ?? []).flatMap((r) =>
+    /^\s*(\d\s*)?[A-Za-z]/.test(r.printed) || !r.osis?.length ? [r.printed] : r.osis.map(osisLabel));
+
 // ---- Catechisms ----
 const CREEDS = "https://raw.githubusercontent.com/NonlinearFruit/Creeds.json/master/creeds";
 const CATECHISMS = {
@@ -116,19 +143,73 @@ const CATECHISMS = {
 for (const [id, file] of Object.entries(CATECHISMS)) {
     console.log(`Catechism: ${id}`);
     const src = JSON.parse(await text(`${CREEDS}/${file}`, file));
-    const questions = src.Data.map((d) => ({
+    // The Scripture proofs come from symbolics.dev, written out ("Romans 14:7–9"), when its
+    // questions line up with these; Creeds.json has none for the WSC, and OSIS codes for the rest
+    const sym = (await symbolics(id)).questions;
+    const aligned = sym.length === src.Data.length && sym.every((q, i) => q.number === src.Data[i].Number);
+    if (!aligned) console.warn(`  ${id}: symbolics.dev's questions don't line up; keeping Creeds.json's proofs`);
+    const questions = src.Data.map((d, i) => ({
         n: d.Number,
         q: d.Question,
         // A few have only the version with proof marks ("...makes himself known[1].")
         a: d.Answer || (d.AnswerWithProofs || "").replace(/\s*\[\d+\]/g, ""),
-        proofs: (d.Proofs || []).flatMap((p) => p.References || []),
+        proofs: aligned ? sym[i].segments.flatMap(proofLabels) : (d.Proofs || []).flatMap((p) => p.References || []),
     }));
     write(`catechisms/${id}.json`, {
         title: src.Metadata.Title,
         year: src.Metadata.Year,
-        source: `Creeds.json (${file})`,
+        source: `Creeds.json (${file})${aligned ? "; proofs from symbolics.dev" : ""}`,
         questions,
     });
+}
+// Catechisms taken whole from symbolics.dev (modern spelling)
+for (const [id, doc] of Object.entries({ wlc: "wlc-modernized" })) {
+    console.log(`Catechism: ${id}`);
+    const src = await symbolics(doc);
+    write(`catechisms/${id}.json`, {
+        title: src.title,
+        year: String(src.year),
+        source: `symbolics.dev (${doc}, release ${src.version})`,
+        questions: src.questions.map((q) => ({ n: q.number, q: q.question, a: q.answer, proofs: q.segments.flatMap(proofLabels) })),
+    });
+}
+
+// ---- Creeds & Confessions (symbolics.dev, CC0) ----
+// -> creeds/<id>.json, each a creed or a confession:
+//   creed       { type: "creed", title, year, edition, source, clauses: [{ n, segs }] | null, text: [paragraph...] }
+//   confession  { type: "confession", title, short, year, edition, source,
+//                 chapters: [{ n, title, paragraphs: [{ n, segs }] }] }
+//   segs: [{ t: text, p?: [proof, ...] }], the text in pieces, each with the proofs printed after it
+// The modern-spelling editions are used where symbolics.dev has one.
+const CREED_DOCS = {
+    apostles: "apostles", nicene: "nicene381", athanasian: "athanasian", chalcedon: "chalcedon451", nicaea: "nicene",
+    lbcf1689: "lbcf1689-modernized", wcf: "wcf1646-modernized", savoy: "savoy1658-modernized", phila1742: "phila1742",
+    belgic: "belgic1561", dort: "dort1619", orthodox1679: "orthodox1679", standard1660: "standard1660",
+};
+mkdirSync(`${OUT}/creeds`, { recursive: true });
+const segsOf = (segments) => segments.map((s) => {
+    const p = proofLabels(s);
+    return p.length ? { t: s.text, p } : { t: s.text };
+});
+for (const [id, doc] of Object.entries(CREED_DOCS)) {
+    console.log(`Creed or confession: ${id}`);
+    const src = await symbolics(doc);
+    const base = { title: src.title.replace(/\s*\(modernized\)$/, ""), short: src.short, year: src.year, edition: src.edition, source: `symbolics.dev (${doc}, release ${src.version})` };
+    if (src.kind === "creed") {
+        const text = (src.text ?? "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+        const clauses = src.clauses?.length ? src.clauses.map((c) => ({ n: c.number, segs: segsOf(c.segments) })) : null;
+        if (!text.length && !clauses) throw new Error(`${id}: no text`);
+        write(`creeds/${id}.json`, { type: "creed", ...base, clauses, text });
+    } else if (src.kind === "confession") {
+        if (!src.chapters?.length) throw new Error(`${id}: no chapters`);
+        write(`creeds/${id}.json`, {
+            type: "confession", ...base,
+            chapters: src.chapters.map((c) => ({
+                n: c.number, title: c.title,
+                paragraphs: c.paragraphs.map((p) => ({ n: p.number, segs: segsOf(p.segments) })),
+            })),
+        });
+    } else throw new Error(`${id}: ${doc} is a ${src.kind}`);
 }
 
 // ---- Hymns (Let's Sing) ----
@@ -143,11 +224,8 @@ write("hymns.json", hymns.map((h) => ({
     credits: h.credits || "",
 })));
 // The matcher behind "Paste a list", the same one Let's Sing uses
-writeFileSync("src/vendor/match.js", "// Copied from Let's Sing (SotS1689/lets-sing, web/src/match.js) by
-"
-    + "// scripts/fetch-content.mjs: change it there, then run npm run fetch-content.
-
-"
+writeFileSync("src/vendor/match.js", "// Copied from Let's Sing (SotS1689/lets-sing, web/src/match.js) by\n"
+    + "// scripts/fetch-content.mjs: change it there, then run npm run fetch-content.\n\n"
     + await text("https://raw.githubusercontent.com/SotS1689/lets-sing/main/web/src/match.js", "match.js"));
 console.log("  wrote src/vendor/match.js");
 

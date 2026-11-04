@@ -1,7 +1,7 @@
 // Stats: streaks, how often, and how far along each plan is.
 import { state, save } from "../store.js";
 import { today, addDays, formatDay, weekStart } from "../dates.js";
-import { projectedFinish } from "../schedule.js";
+import { projectedFinish, repeats } from "../schedule.js";
 import { currentStreak, longestStreak, faithfulness, weeklyCounts, totals, nextMilestone, MILESTONES, firstDay } from "../stats.js";
 import { app, esc, setTitle, totalsFor, trackName, kindIcon, unitWord, plural, nextRender, isCurrent } from "../ui.js";
 
@@ -59,9 +59,9 @@ export async function renderStats() {
                 ${state.tracks.map((t) => {
                     const total = unitTotals[t.id];
                     if (!total) return "";
-                    if (t.kind === "prayer") return `<li>
+                    if (repeats(t)) return `<li>
                         <p><span class="icon">${kindIcon(t)}</span> ${esc(trackName(t))}</p>
-                        <p class="muted small">Prayed together on ${plural(all.byTrack[t.id] ?? 0, "day")}</p>
+                        <p class="muted small">${t.kind === "prayer" ? "Prayed" : "Said"} together on ${plural(all.byTrack[t.id] ?? 0, "day")}</p>
                     </li>`;
                     const finish = !t.paused && projectedFinish(t, total, day, worshipDays);
                     const unit = unitWord(t);
