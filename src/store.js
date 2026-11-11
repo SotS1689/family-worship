@@ -67,10 +67,11 @@ export function newTrack({ kind, source, pace, start = today(), position = 0, hy
         ...(kind === "prayer" && source === "custom" ? { name, parts } : {}),
         ...(kind === "creeds" ? (step ? { step } : { each }) : {}),
     };
-    state.tracks.push(track);
-    // Bible, catechism, creed or confession, prayer, then hymns: the usual order of family worship
+    // Bible, catechism, creed or confession, prayer, then hymns: the usual order of family worship.
+    // A new plan goes before the first plan of a later kind, so an order the family set by dragging stays.
     const order = ["bible", "catechism", "creeds", "prayer", "hymns"];
-    state.tracks.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+    const at = state.tracks.findIndex((t) => order.indexOf(t.kind) > order.indexOf(kind));
+    state.tracks.splice(at === -1 ? state.tracks.length : at, 0, track);
     save();
     return track;
 }

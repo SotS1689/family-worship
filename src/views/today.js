@@ -3,6 +3,7 @@ import { state, save } from "../store.js";
 import { today, formatDay } from "../dates.js";
 import { assignment, checkIn, undoCheckIn, repeats } from "../schedule.js";
 import { currentStreak, nextMilestone } from "../stats.js";
+import { handleHtml, makeSortable } from "../reorder.js";
 import { app, esc, setTitle, unitsOf, totalsFor, trackName, kindIcon, toast, nextRender, isCurrent } from "../ui.js";
 
 export async function renderToday() {
@@ -67,6 +68,7 @@ export async function renderToday() {
             `}
         </section>`;
 
+    if (items.length > 1) makeSortable(document.querySelector(".assignments"));
     document.getElementById("check")?.addEventListener("click", async () => {
         checkIn(state, day, await totalsFor(tracks));
         save();
@@ -83,22 +85,23 @@ export async function renderToday() {
 }
 
 function itemHtml({ track, units, from, count, review, finished, skipped, error }) {
-    const head = `<span class="icon">${kindIcon(track)}</span><span class="track-name">${esc(trackName(track))}</span>`;
-    if (error) return `<li class="card">${head}<p class="muted">Couldn't load this — check your connection.</p></li>`;
-    if (finished) return `<li class="card">${head}<p>🎉 Finished! <a href="#/plans/${track.id}">Start again or choose another</a>.</p></li>`;
-    if (skipped) return `<li class="card">${head}<p class="muted">Nothing recorded today.</p></li>`;
+    const head = `<span class="icon">${kindIcon(track)}</span><span class="track-name">${esc(trackName(track))}</span>${handleHtml(esc(trackName(track)))}`;
+    const li = `<li class="card sortable" data-id="${track.id}">`;
+    if (error) return `${li}${head}<p class="muted">Couldn't load this — check your connection.</p></li>`;
+    if (finished) return `${li}${head}<p>🎉 Finished! <a href="#/plans/${track.id}">Start again or choose another</a>.</p></li>`;
+    if (skipped) return `${li}${head}<p class="muted">Nothing recorded today.</p></li>`;
     if (track.kind === "prayer") {
         const unit = units[from % units.length];
-        if (unit.passages) return `<li class="card">${head}<div class="units"><a class="unit" href="#/read/${track.id}/${from % units.length}">${
+        if (unit.passages) return `${li}${head}<div class="units"><a class="unit" href="#/read/${track.id}/${from % units.length}">${
             esc(`Pray: ${unit.label}`)}</a></div></li>`;
         const about = unit.parts.length > 1 ? unit.parts.map((p) => p.title).filter(Boolean).join(" · ") : unit.parts[0].prompt;
-        return `<li class="card">${head}<div class="units"><a class="unit" href="#/read/${track.id}/${from % units.length}">${
+        return `${li}${head}<div class="units"><a class="unit" href="#/read/${track.id}/${from % units.length}">${
             esc(unit.parts.length > 1 ? "Pray together" : `Pray: ${unit.label}`)}</a></div>${about ? `<p class="preview">${esc(about)}</p>` : ""}</li>`;
     }
     // A creed said together, whole or an article at a time
     if (repeats(track)) {
         const i = from % units.length, unit = units[i];
-        return `<li class="card">${head}<div class="units"><a class="unit" href="#/read/${track.id}/${i}">${
+        return `${li}${head}<div class="units"><a class="unit" href="#/read/${track.id}/${i}">${
             esc(unit.preview ? unit.label : "Say it together")}</a></div>${unit.preview ? `<p class="preview">${esc(unit.preview)}</p>` : ""}</li>`;
     }
     const links = [];
@@ -107,5 +110,5 @@ function itemHtml({ track, units, from, count, review, finished, skipped, error 
     if (!links.length) links.push(`<span class="muted">Nothing new today.</span>`);
     const preview = !count ? "" : track.kind === "catechism" ? `<p class="preview">${esc(units[from].q)}</p>`
         : track.kind === "creeds" && units[from].preview ? `<p class="preview">${esc(units[from].preview)}</p>` : "";
-    return `<li class="card">${head}<div class="units">${links.join("")}</div>${preview}</li>`;
+    return `${li}${head}<div class="units">${links.join("")}</div>${preview}</li>`;
 }

@@ -5,6 +5,7 @@ import { unitsPerDay, projectedFinish, repeats } from "../schedule.js";
 import { KINDS, SOURCES, GOALS } from "../catalog.js";
 import { offlineStatus, saveOffline } from "../letsSing.js";
 import { PRAYER_PLANS, blankPart } from "../prayer.js";
+import { handleHtml, makeSortable } from "../reorder.js";
 import { app, $, esc, setTitle, unitsOf, sourceUnits, totalsFor, trackName, kindIcon, paceText, rateText, unitWord, plural, nextRender, isCurrent, toast } from "../ui.js";
 
 export async function renderPlans() {
@@ -17,7 +18,7 @@ export async function renderPlans() {
         <ul class="tracks">
             ${state.tracks.map((t) => {
                 const total = totals[t.id];
-                if (repeats(t)) return `<li class="card">
+                if (repeats(t)) return `<li class="card sortable" data-id="${t.id}">${state.tracks.length > 1 ? handleHtml(esc(trackName(t))) : ""}
                     <a class="track-link" href="#/plans/${t.id}">
                         <span class="icon">${kindIcon(t)}</span>
                         <span class="track-name">${esc(trackName(t))}</span>
@@ -26,7 +27,7 @@ export async function renderPlans() {
                 </li>`;
                 const pct = total ? Math.round((100 * t.position) / total) : 0;
                 const finish = total && !t.paused ? projectedFinish(t, total, day, state.settings.worshipDays) : null;
-                return `<li class="card">
+                return `<li class="card sortable" data-id="${t.id}">${state.tracks.length > 1 ? handleHtml(esc(trackName(t))) : ""}
                     <a class="track-link" href="#/plans/${t.id}">
                         <span class="icon">${kindIcon(t)}</span>
                         <span class="track-name">${esc(trackName(t))}</span>
@@ -40,6 +41,7 @@ export async function renderPlans() {
             }).join("")}
         </ul>
         <a class="btn primary wide" href="#/plans/new">＋ Add a plan</a>`;
+    if (state.tracks.length > 1) makeSortable($(".tracks"));
 }
 
 // Where the form starts for each kind: a year through the Bible; a catechism question

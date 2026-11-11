@@ -330,3 +330,17 @@ iframe.lets-sing.ready {
 .part-tools { display: flex; gap: .4rem; margin-top: .4rem; }
 .part-tools .btn:disabled { opacity: .4; cursor: default; }
 .reader .guide { font-family: var(--sans); font-size: .95rem; line-height: 1.5; margin: 0 0 .75rem; }
+
+/* ---- Reordering plans (Today and Plans): drag the ⠿ handle ---- */
+.card.sortable { position: relative; padding-right: 3rem; }
+.drag-handle {
+    position: absolute; top: .45rem; right: .4rem; width: 2.5rem; height: 2.5rem;
+    border: 0; border-radius: 10px; background: none; color: var(--muted);
+    font-size: 1.4rem; line-height: 1; cursor: grab; touch-action: none; user-select: none;
+}
+.drag-handle:hover { background: var(--bg); color: var(--ink); }
+.drag-handle:focus-visible { outline: 2px solid var(--gold); }
+.card.dragging { position: relative; z-index: 5; box-shadow: 0 8px 24px rgb(0 0 0 / .25); cursor: grabbing; }
+.card.dragging .drag-handle { cursor: grabbing; }
+.card.sortable:only-child { padding-right: 1rem; }
+.card.sortable:only-child .drag-handle { display: none; }

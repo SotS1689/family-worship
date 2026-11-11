@@ -76,6 +76,8 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
   over the rest of the time. A fixed **pace** just finishes later.
 - `src/letsSing.js` puts Let's Sing in a hymn's page and saves hymns for offline use
   (see "Let's Sing" below).
+- `src/reorder.js` lets the family drag a plan's ⠿ handle (on Today or Plans) to change the order
+  of family worship; the order is saved, and synced like the rest. A new plan goes in with its kind.
 - `src/stats.js` computes streaks, faithfulness percentages and weekly counts. Days the
   family doesn't plan to worship (Settings → Worship days) don't break a streak.
 - `src/store.js` holds the saved data. Its shape is documented at the top of the file.
