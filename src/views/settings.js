@@ -1,7 +1,8 @@
 // Settings: Bible version, which days the family worships, theme, and backups.
 import { state, save, exportData, importData } from "../store.js";
 import { today } from "../dates.js";
-import { app, $, setTitle, toast, nextRender, versionOptions, bibleVersion } from "../ui.js";
+import { app, $, esc, setTitle, toast, nextRender, versionOptions, bibleVersion } from "../ui.js";
+import { account, syncStatus, signIn, signOut, sync } from "../sync.js";
 import { applyTheme } from "../theme.js";
 import { esvKey, setEsvKey, ESV_NOTICE } from "../esv.js";
 
@@ -46,8 +47,13 @@ export function renderSettings() {
             </div>
         </section>
         <section class="card">
+            <h2>Use on more than one device</h2>
+            ${syncCard()}
+        </section>
+        <section class="card">
             <h2>Backup</h2>
-            <p class="muted small">Your plans and check marks are kept only on this device. Save a backup file
+            <p class="muted small">${account() ? "Your plans and check marks are kept on this device and in your account."
+                : "Your plans and check marks are kept only on this device."} Save a backup file
                to move to a new phone or keep them safe.</p>
             <div class="actions">
                 <button class="btn" id="export">Save backup</button>
@@ -89,6 +95,25 @@ export function renderSettings() {
         update();
     });
 
+    $("#sign-in")?.addEventListener("click", async (e) => {
+        e.target.disabled = true;
+        try {
+            if (await signIn()) toast("Signed in. Your plans now keep in step on every device.");
+        } catch (err) {
+            console.error(err);
+            alert(`Couldn't sign in: ${err.message}`);
+        }
+        renderSettings();
+    });
+    $("#sync-now")?.addEventListener("click", () => sync());
+    $("#sign-out")?.addEventListener("click", async () => {
+        if (!confirm("Sign out? Your plans and check marks stay in your account.")) return;
+        const removeHere = confirm("Also remove them from this device?\n\nOK removes them here (sign in again to bring them back). Cancel keeps a copy here.");
+        await signOut(removeHere);
+        toast("Signed out.");
+        renderSettings();
+    });
+
     $("#export").addEventListener("click", () => {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([exportData()], { type: "application/json" }));
@@ -109,6 +134,28 @@ export function renderSettings() {
             alert(err.message);
         }
     });
+}
+
+function syncCard() {
+    const { account: a, status, lastSynced } = syncStatus();
+    if (!a) {
+        return `<p class="muted small">Sign in with Google to keep your plans and check marks in step on every phone
+               and tablet in the family. Without signing in, everything stays on this device only.</p>
+            <div class="actions"><button class="btn" id="sign-in">Sign in with Google</button></div>`;
+    }
+    const when = lastSynced ? new Date(lastSynced).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
+    const line = {
+        syncing: "Syncing…",
+        synced: `Up to date${when ? ` (checked ${when})` : ""}.`,
+        offline: "Offline: changes will sync when you're back online.",
+        error: "Couldn't sync just now. It will try again.",
+    }[status] ?? "";
+    return `<p class="small">Signed in as <strong>${esc(a.name || a.email)}</strong>${a.name && a.email ? ` <span class="muted">(${esc(a.email)})</span>` : ""}.</p>
+        <p class="muted small" id="sync-status">${esc(line)}</p>
+        <div class="actions">
+            <button class="btn" id="sync-now" ${status === "syncing" ? "disabled" : ""}>Sync now</button>
+            <button class="btn" id="sign-out">Sign out</button>
+        </div>`;
 }
 
 function update(change = () => {}) {

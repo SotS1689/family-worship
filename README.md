@@ -10,7 +10,8 @@ finishing. Every day the **Today** page shows what's due, and one tap on the che
 records that the family worshipped. **Stats** shows streaks, days per week, a calendar and
 how far along each plan is.
 
-Everything is stored on the phone. There are no accounts and no server.
+Everything is stored on the phone. Signing in with Google (optional, in Settings) also keeps
+the plans and check marks in the family's account, so every phone and tablet stays in step.
 **Settings → Backup** saves the data to a file and restores it.
 
 ## Everyday commands
@@ -48,6 +49,15 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 - `src/main.js` handles routing with hash routes (`#/`, `#/plans`, `#/stats`, `#/settings`,
   `#/read/<plan>/<n>`).
 - `src/views/` holds one file per screen.
+- `src/sync.js`, `src/syncMerge.js`, `src/firebase.js`: optional Google sign-in (in Settings)
+  that keeps plans, check marks and settings (not the theme) in step across devices, through
+  Firebase's free plan (project `family-worship-1689`). Firebase loads only for someone who
+  has signed in. Each plan, each day of the log and the settings carry when they last
+  changed, and the later change wins; removed plans and days are remembered so they stay
+  removed. Access rules are in `firestore.rules`; paste them into Firebase console >
+  Firestore Database > Rules after any change. Sign-in works only on the domains listed under
+  Firebase Authentication > Settings > Authorized domains (localhost, taylordrummond.org,
+  familyworship.gracecommunityallentown.org).
 - `src/catalog.js` lists the plans, catechisms, creeds and confessions, prayer plans and hymn sources the app offers.
 - `creedUnits` in `src/content.js` turns a creed into one unit (said whole) or a unit per article, and a
   confession into a unit per paragraph or per chapter (the track's `step`). A creed repeats like a prayer

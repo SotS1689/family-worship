@@ -8,6 +8,7 @@ import "./style.css";
 import { applyTheme } from "./theme.js";
 import { setUpSupport } from "./support.js";
 import { CHURCH } from "./catalog.js";
+import { sync, onSync } from "./sync.js";
 import { renderToday } from "./views/today.js";
 import { renderReader } from "./views/reader.js";
 import { renderPlans, renderPlanForm } from "./views/plans.js";
@@ -45,6 +46,15 @@ $("#back").addEventListener("click", () => (history.length > 1 ? history.back() 
 addEventListener("hashchange", route);
 applyTheme();
 route();
+
+// Signed in: bring in what other devices saved, and show it. A plan being
+// edited or a reading open isn't redrawn under the family's fingers.
+onSync(({ changed }) => {
+    const settings = location.hash === "#/settings";
+    if (!changed && !settings) return;
+    if (settings || !/^#\/(read|plans\/)/.test(location.hash)) route();
+});
+sync();
 if (CHURCH) document.querySelector(".support-wrap").remove();
 else setUpSupport();
 
