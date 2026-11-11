@@ -16,7 +16,7 @@ export async function renderToday() {
         app().innerHTML = `
             <section class="welcome card">
                 <h2>Welcome</h2>
-                <p>Choose what your family will go through together: a Bible reading plan, a catechism, a creed or confession, a way to pray, and hymns.
+                <p>Choose what your family will go through together: a Bible reading plan, a catechism, a creed or confession, a prayer plan, and hymns.
                    Set a goal or a pace for each, then tap the check mark each day you worship together.</p>
                 <a class="btn primary" href="#/plans/new">Set up family worship</a>
             </section>`;
