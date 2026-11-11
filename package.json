@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "fetch-content": "node scripts/fetch-content.mjs",
+    "fetch-music": "node scripts/fetch-catechism-music.mjs",
     "dev": "vite",
     "dev:lets-sing": "vite --mode lets-sing --port 5175",
     "dev:church": "vite --mode church --port 5176",

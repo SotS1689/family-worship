@@ -37,6 +37,9 @@ self.addEventListener("fetch", (event) => {
     const req = event.request;
     const url = new URL(req.url);
     if (req.method !== "GET" || url.origin !== location.origin) return;
+    // Catechism recordings stream straight from the site (the player asks for them in
+    // pieces, which the cache can't store)
+    if (url.pathname.includes("/audio/")) return;
 
     if (req.mode === "navigate") {
         // Network first, so an online visit always gets the current version

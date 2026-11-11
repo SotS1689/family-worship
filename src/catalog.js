@@ -53,10 +53,12 @@ export const SOURCES = {
             short: "Baptist Catechism",
             about: "Every question is sung, from Jim Scott Orrick's The Baptist Catechism Set to Music.",
             unit: "question",
-            // Orrick's settings as baptistcatechism.org (Silicon Valley Reformed Baptist Church)
-            // publishes them, one recording per question, played from their storage
+            // Orrick's settings, one recording per question, from baptistcatechism.org
+            // (Silicon Valley Reformed Baptist Church). The app keeps its own copy in
+            // public/audio/bc1695/ (npm run fetch-music), with permission from Orrick and
+            // the site's developer, so the songs keep working if that site changes.
             music: {
-                url: (n) => `https://baptistcatechism-org.storage.googleapis.com/orrick-catechism/orrick-catechism-${String(n).padStart(3, "0")}.mp3`,
+                url: (n) => `./audio/bc1695/orrick-catechism-${String(n).padStart(3, "0")}.mp3`,
                 page: (n) => `https://baptistcatechism.org/${n}/`,
                 credit: "The Baptist Catechism Set to Music by Jim Scott Orrick, © 2001. Used by permission. Recording via baptistcatechism.org.",
             },

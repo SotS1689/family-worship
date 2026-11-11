@@ -25,6 +25,7 @@ the plans and check marks in the family's account, so every phone and tablet sta
 | `npm run build` | Makes the finished site in `dist/`. |
 | `npm run preview` | Serves `dist/` at http://localhost:4173 to try the real build, offline mode included. |
 | `npm run fetch-content` | Downloads the texts again into `public/data/`, e.g. after hymns are added to Let's Sing. Add `-- --fresh` to ignore the saved downloads in `sources/`. |
+| `npm run fetch-music` | Downloads the Baptist Catechism recordings from baptistcatechism.org (originals kept in `sources/orrick/`) and saves smaller 96 kbps copies in `public/audio/bc1695/`, which the app plays. Skips files it already has; add `-- --fresh` to redo them all. Needs ffmpeg. |
 
 Pushing to `main` on GitHub publishes the site through `.github/workflows/pages.yml`. To set
 that up, turn on Pages in the repo settings with **Source: GitHub Actions**.
@@ -83,7 +84,8 @@ Plain JavaScript and [Vite](https://vite.dev), built the same way as Let's Sing.
 - `src/store.js` holds the saved data. Its shape is documented at the top of the file.
 - `sw-template.js` and `scripts/stamp-sw.mjs` are the offline service worker. The app,
   catechisms, hymns and plans are cached at install. Each Bible book is cached the
-  first time it's opened.
+  first time it's opened. The catechism recordings in `public/audio/` are left out, so
+  they only play online.
 
 ## Let's Sing
 
@@ -118,7 +120,7 @@ published there. Until the player loads, or if it can't, the page shows the word
 | Westminster Shorter, 1695 Baptist and Heidelberg catechisms | [Creeds.json](https://github.com/NonlinearFruit/Creeds.json), with their Scripture proofs from [symbolics.dev](https://symbolics.dev) | Public-domain texts; symbolics.dev is CC0 |
 | Westminster Larger Catechism; creeds (Apostles', Nicene, Athanasian, Chalcedonian, Nicaea 325) and confessions (1689, Westminster, Savoy, Philadelphia, Belgic, Dort, Orthodox Creed, Standard Confession) | [symbolics.dev](https://symbolics.dev)'s JSON API, in its modern-spelling editions where it has them (`CREED_DOCS` in `scripts/fetch-content.mjs`) | CC0 |
 | An Orthodox Catechism (Hercules Collins, 1680) | The pastor's Word document `The Orthodox Catechism.docx`, imported by `scripts/import_collins.py` | Public-domain text |
-| Baptist Catechism music | Jim Scott Orrick, *The Baptist Catechism Set to Music*. Played from [baptistcatechism.org](https://baptistcatechism.org)'s storage, not copied here (see `music` in `src/catalog.js`) | © 2001 Orrick, used by permission on baptistcatechism.org. That site's developer has allowed its use here. |
+| Baptist Catechism music | Jim Scott Orrick, *The Baptist Catechism Set to Music*. Recordings from [baptistcatechism.org](https://baptistcatechism.org), copied into `public/audio/bc1695/` (`npm run fetch-music`) so they keep working if that site changes. They stream when played and aren't saved for offline use. | © 2001 Orrick. Orrick and baptistcatechism.org's developer have both given permission for the app to keep and play its own copy. |
 | Hymns and psalms | [Let's Sing](https://github.com/SotS1689/lets-sing) `hymns_data.json`; played by Let's Sing itself, embedded (see above) | As Let's Sing |
 | M'Cheyne calendar | [willswire/mcheyne](https://github.com/willswire/mcheyne) | Apache-2.0 |
 | Chronological plan | [bennythadikaran/bible](https://github.com/bennythadikaran/bible) | GPL-3.0 repo, plan from biblestudytools.com |

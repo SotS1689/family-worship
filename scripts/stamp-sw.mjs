@@ -20,6 +20,9 @@ const files = walk(DIST)
     .sort();
 
 const isBible = (f) => f.startsWith("data/bible/");
+// The catechism recordings (about 80 MB) stream when played; they aren't saved for
+// offline use, or every install would download them all
+const isAudio = (f) => f.startsWith("audio/");
 
 const hashOf = (list, seed = "") => {
     const hash = createHash("sha256").update(seed);
@@ -33,7 +36,7 @@ const hashOf = (list, seed = "") => {
 const template = readFileSync("sw-template.js", "utf8");
 const version = hashOf(files, template);
 const bibleVersion = hashOf(files.filter(isBible));
-const shell = ["./", ...files.filter((f) => !isBible(f) && !f.endsWith(".map")).map((f) => `./${f}`)];
+const shell = ["./", ...files.filter((f) => !isBible(f) && !isAudio(f) && !f.endsWith(".map")).map((f) => `./${f}`)];
 
 const sw = template
     .replace("__VERSION__", version)
