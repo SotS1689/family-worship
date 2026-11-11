@@ -138,5 +138,5 @@ export const GOALS = [
 ];
 
 // Where Let's Sing lives. To try Let's Sing changes here before publishing them,
-// run its dev server and start this one with VITE_LETS_SING_URL=http://localhost:5174/
+// run its dev server and start this one with VITE_LETS_SING_URL=http://localhost:4174/
 export const LETS_SING_URL = import.meta.env?.VITE_LETS_SING_URL || "https://taylordrummond.org/lets-sing/";

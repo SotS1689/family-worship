@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <script>
+        // An iPhone home-screen app hides the Home link (#home); other installed
+        // copies are caught by the display-mode rule in style.css.
+        if (navigator.standalone) document.documentElement.classList.add("installed");
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Family Worship</title>
     <meta name="description" content="Bible reading, catechism and hymns for family worship, with a daily check mark and streaks.">
@@ -15,7 +20,12 @@
         <button class="icon-btn" id="back" aria-label="Back" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>
         </button>
-        <h1 id="page-title">Family Worship</h1>
+        <div class="title-row">
+            <a class="icon-btn" id="home" href="https://taylordrummond.org/" aria-label="Home: taylordrummond.org" title="taylordrummond.org">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8M5 9.5V21h5v-6h4v6h5V9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <h1 id="page-title">Family Worship</h1>
+        </div>
         <div class="support-wrap">
             <a class="icon-btn" id="support" href="https://buymeacoffee.com/taylordrummond"
                target="_blank" rel="noopener" aria-label="Support" title="Support">

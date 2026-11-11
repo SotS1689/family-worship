@@ -55,7 +55,14 @@ onSync(({ changed }) => {
     if (settings || !/^#\/(read|plans\/)/.test(location.hash)) route();
 });
 sync();
-if (CHURCH) document.querySelector(".support-wrap").remove();
+// The church copy has no heart, and its Home button goes to the church's site
+if (CHURCH) {
+    document.querySelector(".support-wrap").remove();
+    const home = document.getElementById("home");
+    home.href = "https://gracecommunityallentown.org/";
+    home.title = "gracecommunityallentown.org";
+    home.setAttribute("aria-label", "Home: gracecommunityallentown.org");
+}
 else setUpSupport();
 
 // A day can roll over while the app sits open: show the new day when it comes back
