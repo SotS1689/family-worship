@@ -15,6 +15,7 @@ import { renderPlans, renderPlanForm } from "./views/plans.js";
 import { renderStats } from "./views/stats.js";
 import { renderSettings } from "./views/settings.js";
 import { app, $, $$, esc } from "./ui.js";
+import { showInstallCard } from "./install.js";
 
 const ROUTES = [
     [/^#\/read\/([\w-]+)\/(\d+)$/, (id, n) => renderReader(id, +n), "today"],
@@ -32,6 +33,7 @@ async function route() {
         if (!m) continue;
         for (const a of $$(".tabbar a")) a.classList.toggle("on", a.dataset.tab === tab);
         $("#back").hidden = !/^#\/(read|plans\/)/.test(location.hash);
+        showInstallCard(render === renderToday);
         try {
             await render(...m.slice(1));
         } catch (e) {
